@@ -436,7 +436,6 @@ window.__ModuleLoader__.load({
   font-family: inherit; font-size: inherit; line-height: inherit;
   caret-color: var(--gcmd-accent);
 }
-.gcmd-input::placeholder { color: #4d5b69; }
 
 /* 命令在跑的时候，只让窗口顶沿亮起一条流动光带：点它等于「停止」，不再放状态文字 */
 .gcmd-progress {
@@ -1208,7 +1207,6 @@ window.__ModuleLoader__.load({
     function PromptRow({ tab }) {
       const inputRef = useRef(null)
       const [draft, setDraft] = useState(tab ? tab.draft : '')
-      const [focused, setFocused] = useState(false)
       const tabId = tab ? tab.id : ''
 
       useEffect(() => {
@@ -1236,7 +1234,6 @@ window.__ModuleLoader__.load({
       }, [tab ? tab.draft : ''])
 
       if (!tab) return null
-      const running = Boolean(tab.running)
       // cmd 的提示符就是「路径>」，PowerShell 才是「PS 路径>」
       const isPowerShell = tab.shell === 'powershell' || tab.shell === 'pwsh'
       const promptText = `${isPowerShell ? 'PS ' : ''}${tab.cwd || '~'}`
@@ -1289,11 +1286,8 @@ window.__ModuleLoader__.load({
           value: draft,
           spellCheck: false,
           autoComplete: 'off',
-          // 真 cmd 里提示符后面是空的：只有没对焦时才提示一句
-          placeholder: focused ? '' : '输入命令，回车执行',
+          // 真 cmd 的提示符后面什么都不写：不放 placeholder，空着就是一个等宽光标
           onChange: (event) => commit(event.target.value),
-          onFocus: () => setFocused(true),
-          onBlur: () => setFocused(false),
           onKeyDown,
         }),
       )
