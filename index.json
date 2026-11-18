@@ -22,22 +22,22 @@
       "name": "@local/prompt-enhance",
       "title": { "en": "Prompt Enhance", "zh": "提示词润色" },
       "description": {
-        "en": "A sparkle button in the composer: one click rewrites the draft into a clearer prompt using only the last two conversation rounds; no project files are read.",
-        "zh": "输入框里的润色按钮：一键把草稿改写成更清晰的提示词，只参考最近两轮对话，不读项目规则文件。"
+        "en": "A sparkle button in the composer: one click rewrites your draft into a clearer prompt using the draft itself, the files and @-references already attached to it, and the last two conversation rounds. No project files are read, and switching conversations never cancels a running rewrite.",
+        "zh": "输入框里的润色按钮：一键把草稿连同已附的附件、@ 引用和最近两轮对话一起改写成更清晰的提示词。不读项目文件，切换会话也不会中断正在进行的改写。"
       },
       "author": "wrysmil",
       "homepage": "https://github.com/wrysmil/dsh-personal-agent/tree/main/prompt-enhance",
       "repository": { "url": "https://github.com/wrysmil/dsh-personal-agent.git", "directory": "prompt-enhance" },
-      "metadata": { "category": "custom", "keywords": ["prompt", "rewrite", "composer"] },
+      "metadata": { "category": "custom", "keywords": ["prompt", "rewrite", "composer", "attachment", "reference"] },
       "versions": [
         {
-          "version": "1.0.1",
-          "publishTimestamp": 1794991134,
+          "version": "1.2.0",
+          "publishTimestamp": 1794994757,
           "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
           "source": {
             "type": "git",
             "url": "https://github.com/wrysmil/dsh-personal-agent.git",
-            "commit": "4ffb6b152c5830edcdf9081d9e1c6ed260bede0a",
+            "commit": "a797a021df7e5d5ca8bdc78e7d9313f59643262a",
             "path": "prompt-enhance"
           }
         }
