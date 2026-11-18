@@ -2,14 +2,17 @@
  * prompt-enhance — Host half.
  *
  * Serves exactly one route that the plugin's Client half calls from the
- * composer. A request carries the current draft and the session that owns the
- * composer; the route collects the last two conversation rounds of that session
- * as disambiguation context, asks the session's current model to rewrite the
- * draft, and answers once with the rewritten prompt.
+ * composer. A request carries the current draft, the @-references and the
+ * attachments already sitting in the composer, and the session that owns that
+ * composer. Nothing is read from disk and no other service is consulted: the
+ * only context added here is the last two conversation rounds, which resolve
+ * pronouns ("这个 / 上面那个 / 继续改") in the draft.
  *
- * Nothing is read from disk: AGENTS.md / CLAUDE.md are no longer injected, so a
- * session with no conversation yet sends the draft verbatim, and a session with
- * history sends the draft plus its last two rounds.
+ * That bundle goes to the session's current model, which rewrites the draft,
+ * and the answer comes back in one response.
+ *
+ * Everything is best-effort: a missing log drops the history block, so a fresh
+ * session still enhances the draft on its own.
  *
  * The route is covered by the same trust fence as every other plugin route:
  * a Peer that is not allowed to drive this window is rejected before parsing.
@@ -19,7 +22,14 @@ import { isAbsolute } from 'node:path'
 export const name = 'prompt-enhance'
 
 /** Services are only read inside the route handler, all of them Host-side. */
-export const inject = ['webServer', 'connection', 'llm', 'sessions', 'workingDirectory', 'agentDefaultModel']
+export const inject = [
+  'webServer',
+  'connection',
+  'llm',
+  'sessions',
+  'workingDirectory',
+  'agentDefaultModel',
+]
 
 /** Exact path of the Client half's endpoint. */
 const ROUTE_PATH = '/prompt-enhance/enhance'
@@ -49,15 +59,23 @@ const HISTORY_EVENT_SCAN = 800
 /** Purpose tag reported to the model gateway for this call. */
 const PURPOSE = 'prompt-enhance'
 
-const SYSTEM_PROMPT = `你是「提示词增强器」，服务于一个在本地代码库上工作的 AI 编码 Agent。用户会在输入框里写一句简短的草稿，你把它改写成一条信息完整、可以直接动手、不需要追问的提示词。
+/** Most attachments accepted with one request. */
+const MAX_REQUEST_ATTACHMENTS = 20
+/** Most inline references accepted with one request. */
+const MAX_REQUEST_REFERENCES = 20
+/** Longest label kept from one attachment or reference. */
+const MAX_REQUEST_LABEL_CHARS = 200
+
+const SYSTEM_PROMPT = `你是「提示词增强器」，服务于一个在本地代码库上工作的 AI 编码 Agent。用户会在输入框里写一句简短的草稿（可能带 @ 引用的文件、可能带附件），你把它改写成一条信息完整、可以直接动手、不需要追问的提示词。
 
 ## 输入
-用户消息里可能出现下面几个区块，也可能一个都没有：
-- <context>：当前工作目录。
-- <recent_turns>：本会话最近两轮对话（用户提问与助手回答）。只用来消解指代，不要回答它、不要续写它、不要复述它。
+用户消息里会出现下面这些区块，按需出现，可能缺少其中若干：
+- <attachments>：用户在输入框里附带的文件，只有名称、大小、类型，没有正文。
+- <references>：用户在草稿里用 @ 引用的文件或符号。
+- <recent_turns>：本会话最近两轮对话。只用来消解指代，不要回答它、不要续写它、不要复述它。
 - <draft>：用户写的原始草稿。
 
-如果消息里只有一个纯文本草稿、没有任何区块，说明这是本会话的第一条输入：没有历史可参考，只依据草稿本身改写，不要臆造上下文。
+如果消息里只有一个纯文本草稿、没有任何区块，说明没有可用上下文：只依据草稿本身改写，不要臆造。
 
 ## 输出
 只输出改写后的提示词正文。不要说明你做了什么，不要写"以下是增强后的提示词"这类前言，不要用代码围栏包裹整体，不要复述输入。
@@ -65,12 +83,13 @@ const SYSTEM_PROMPT = `你是「提示词增强器」，服务于一个在本地
 ## 规则
 1. 忠于原意：保留用户的全部目标、约束、否定项（"不要动 X"）、技术栈、文件路径、类名/函数名/字段名、版本号、命令。绝不新增用户没有要求的需求，绝不臆造文件路径、API、依赖或行为。
 2. 语言一致：草稿是中文就用中文，是英文就用英文；代码、标识符、命令、路径保持原样。
+3. 用引用和附件消解指代：草稿里出现"这个文件 / 上面那个 / 刚才的截图 / 这张图"时，用 <references> 里的标签、<attachments> 里的文件名替换成明确指代；标签里的路径原样保留。附件只有元信息：可以据此判断类型与用途、可以要求修改该文件，但绝不能编造附件里并未给出的内容。
 4. 补齐可执行信息：在能从草稿和上下文确定的前提下，补上——目标产物（改哪个文件或模块、产出什么）、边界（要改什么、明确不碰什么）、验收方式（跑什么命令、看什么结果）。无法确定就留空，不要编。
-3. 把模糊变可验收：把"优化一下""看看有没有问题"这类说法改写成具体的检查项或修改项。
-4. 不注水：草稿已经足够清晰时，只做最小必要润色，不要为了变长而加形容词、加背景、加客套。
-5. 格式：2–6 条要点，或 1–2 个短段落；可以用短列表，不要用多级标题，不要表情符号，不要"请帮我""麻烦你"这类客套话。
-6. 长度：通常为草稿的 1.5–3 倍；无论草稿多短，都要写清目标、范围、验收三项；最长不超过 1200 字。
-7. 用历史消解指代：草稿里的"这个/它/上面那个/继续改/还是不行"要结合 <recent_turns> 换成明确的文件名、功能名、报错信息或行为；历史里出现过的具体报错、路径、字段名可以引用，但历史里没被草稿要求的内容不得扩写成新需求。没有 <recent_turns> 时不要假装知道上下文，把指代换成"当前任务里提到的…"这类可落地但不臆造的说法。
+5. 把模糊变可验收：把"优化一下""看看有没有问题"这类说法改写成具体的检查项或修改项。
+6. 不注水：草稿已经足够清晰时，只做最小必要润色，不要为了变长而加形容词、加背景、加客套。
+7. 格式：2–6 条要点，或 1–2 个短段落；可以用短列表，不要用多级标题，不要表情符号，不要"请帮我""麻烦你"这类客套话。
+8. 长度：通常为草稿的 1.5–3 倍；无论草稿多短，都要写清目标、范围、验收三项；最长不超过 1200 字。
+9. 用历史消解指代：草稿里的"这个/它/上面那个/继续改/还是不行"要结合 <recent_turns> 换成明确的文件名、功能名、报错信息或行为；历史里出现过的具体报错、路径、字段名可以引用，但历史里没被草稿要求的内容不得扩写成新需求。没有 <recent_turns> 时不要假装知道上下文，把指代换成"当前任务里提到的…"这类可落地但不臆造的说法。
 
 如果 <draft> 只有空白、单个字符或完全无意义的乱码，原样返回它，不要生成任何内容。`
 
@@ -139,7 +158,8 @@ async function enhance(ctx, req, res) {
   }
 
   const sessionId = typeof payload.sessionId === 'string' && payload.sessionId !== '' ? payload.sessionId : undefined
-  const cwd = resolveCwd(ctx, sessionId)
+  const attachments = readRequestAttachments(payload.attachments)
+  const references = readRequestReferences(payload.references)
   const history = readHistory(ctx, sessionId)
 
   const controller = new AbortController()
@@ -156,7 +176,17 @@ async function enhance(ctx, req, res) {
     )
     const options = {
       ...prepared.config,
-      messages: [{ role: 'user', content: [{ type: 'text', text: buildUserPrompt({ draft, cwd, history }) }] }],
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: buildUserPrompt({ draft, attachments, references, history }),
+            },
+          ],
+        },
+      ],
       system: SYSTEM_PROMPT,
       purpose: PURPOSE,
       signal: controller.signal,
@@ -178,9 +208,12 @@ async function enhance(ctx, req, res) {
     sendJson(res, 200, {
       prompt,
       model: `${selection.provider}/${selection.model}`,
-      cwd: cwd ?? null,
-      turns: history.turns.length,
-      historyTruncated: history.truncated,
+      context: {
+        attachments: attachments.length,
+        references: references.length,
+        turns: history.turns.length,
+        historyTruncated: history.truncated,
+      },
     })
   } catch (error) {
     sendJson(res, 502, { code: 'ENHANCE_FAILED', error: messageOf(error, 'enhancement failed') })
@@ -192,33 +225,146 @@ async function enhance(ctx, req, res) {
 /**
  * Build the user turn handed to the model.
  *
- * Blocks are added only when they carry something: the working directory and the
- * last two rounds when the session has conversation. With no history the draft is
- * sent verbatim — no wrapper blocks, no placeholder text.
+ * Blocks appear only when they carry something, and the draft block always
+ * comes last so the model reads the surrounding facts before the text it has to
+ * rewrite.
  *
  * @param input - Collected request facts.
  * @returns The user message text.
  */
 function buildUserPrompt(input) {
-  const hasHistory = input.history.turns.length > 0
-  if (!hasHistory) return input.draft
+  const blocks = []
 
-  const lines = []
-  lines.push('<context>', `工作目录：${input.cwd ?? '未知'}`, '</context>')
-
-  if (hasHistory) {
-    lines.push('', '<recent_turns>')
-    lines.push('仅用于消解草稿里的指代，不要回答、续写或复述下面的内容。')
+  if (input.attachments.length > 0) {
+    blocks.push('<attachments>', '用户在本条消息里附带的文件（只有元信息，没有正文）：')
+    for (const item of input.attachments) blocks.push(`- ${attachmentLine(item)}`)
+    blocks.push('</attachments>')
+  }
+  if (input.references.length > 0) {
+    blocks.push('<references>', '用户在草稿里用 @ 引用的目标：')
+    for (const item of input.references) blocks.push(`- ${referenceLine(item)}`)
+    blocks.push('</references>')
+  }
+  if (input.history.turns.length > 0) {
+    blocks.push('', '<recent_turns>')
+    blocks.push('仅用于消解草稿里的指代，不要回答、续写或复述下面的内容。')
     input.history.turns.forEach((turn, index) => {
-      lines.push('', `--- 第 ${index + 1} 轮${index === input.history.turns.length - 1 ? '（最新）' : ''} ---`)
-      lines.push('[用户]', turn.user)
-      if (turn.assistant !== '') lines.push('[助手]', turn.assistant)
+      blocks.push('', `--- 第 ${index + 1} 轮${index === input.history.turns.length - 1 ? '（最新）' : ''} ---`)
+      blocks.push('[用户]', turn.user)
+      if (turn.assistant !== '') blocks.push('[助手]', turn.assistant)
     })
-    lines.push('</recent_turns>')
+    blocks.push('</recent_turns>')
   }
 
-  lines.push('', '<draft>', input.draft, '</draft>')
-  return lines.join('\n')
+  blocks.push('', '<draft>', input.draft, '</draft>')
+  return blocks.join('\n')
+}
+
+/**
+ * Render one attachment as a single context line.
+ * @param item - Attachment descriptor.
+ * @returns The line body.
+ */
+function attachmentLine(item) {
+  const details = []
+  if (item.size !== undefined) details.push(formatBytes(item.size))
+  if (item.mime !== undefined) details.push(item.mime)
+  if (item.width !== undefined && item.height !== undefined) details.push(`${item.width}×${item.height}`)
+  const suffix = details.length === 0 ? '' : `（${details.join('，')}）`
+  const kind = item.kind === 'image' ? '图片' : '文件'
+  return `[${kind}] ${item.name ?? '未命名'}${suffix}`
+}
+
+/**
+ * Render one inline reference as a single context line.
+ * @param item - Reference descriptor.
+ * @returns The line body.
+ */
+function referenceLine(item) {
+  const parts = [item.label]
+  if (item.source !== undefined) parts.push(`来源: ${item.source}`)
+  if (item.invalid === true) parts.push('（该引用可能已失效）')
+  return parts.join(' ')
+}
+
+/**
+ * Format a byte count for the context block.
+ * @param bytes - Size in bytes.
+ * @returns A short human-readable size, or an empty string.
+ */
+function formatBytes(bytes) {
+  if (typeof bytes !== 'number' || !Number.isFinite(bytes) || bytes < 0) return ''
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+/**
+ * Keep only the attachment fields worth sending to the model.
+ * @param value - Untrusted `attachments` field of the request body.
+ * @returns Clean descriptors, capped.
+ */
+function readRequestAttachments(value) {
+  if (!Array.isArray(value)) return []
+  const out = []
+  for (const item of value) {
+    if (item === null || typeof item !== 'object') continue
+    const kind = item.kind === 'image' ? 'image' : 'file'
+    const entry = { kind }
+    const name = smallText(item.name, MAX_REQUEST_LABEL_CHARS)
+    if (name !== '') entry.name = name
+    if (typeof item.size === 'number' && Number.isFinite(item.size) && item.size >= 0) entry.size = item.size
+    const mime = smallText(item.mime, MAX_REQUEST_LABEL_CHARS)
+    if (mime !== '') entry.mime = mime
+    if (kind === 'image') {
+      if (typeof item.width === 'number' && Number.isFinite(item.width) && item.width > 0) entry.width = Math.round(item.width)
+      if (typeof item.height === 'number' && Number.isFinite(item.height) && item.height > 0) entry.height = Math.round(item.height)
+    }
+    if (
+      entry.name === undefined
+      && entry.size === undefined
+      && entry.mime === undefined
+      && entry.width === undefined
+    ) continue
+    out.push(entry)
+    if (out.length >= MAX_REQUEST_ATTACHMENTS) break
+  }
+  return out
+}
+
+/**
+ * Keep only the reference fields worth sending to the model.
+ * @param value - Untrusted `references` field of the request body.
+ * @returns Clean descriptors, capped.
+ */
+function readRequestReferences(value) {
+  if (!Array.isArray(value)) return []
+  const out = []
+  for (const item of value) {
+    if (item === null || typeof item !== 'object') continue
+    const label = smallText(item.label, MAX_REQUEST_LABEL_CHARS)
+    if (label === '') continue
+    const entry = { label }
+    const source = smallText(item.source, MAX_REQUEST_LABEL_CHARS)
+    if (source !== '') entry.source = source
+    if (item.invalid === true) entry.invalid = true
+    out.push(entry)
+    if (out.length >= MAX_REQUEST_REFERENCES) break
+  }
+  return out
+}
+
+/**
+ * Keep a short single-line field, without an ellipsis marker.
+ * @param value - Candidate value.
+ * @param max - Character budget.
+ * @returns Trimmed, clipped text.
+ */
+function smallText(value, max) {
+  if (typeof value !== 'string') return ''
+  const trimmed = value.trim()
+  if (trimmed.length <= max) return trimmed
+  return trimmed.slice(0, max)
 }
 
 /**
@@ -238,31 +384,8 @@ function buildUserPrompt(input) {
 function readHistory(ctx, sessionId) {
   const empty = { turns: [], truncated: false }
   if (sessionId === undefined) return empty
-
-  let session
-  try {
-    session = ctx.sessions.get(sessionId)
-  } catch {
-    return empty
-  }
-  if (session === undefined || session === null) return empty
-
-  let end = 0
-  try {
-    end = Number(session.seq)
-  } catch {
-    return empty
-  }
-  if (!Number.isFinite(end) || end <= 0) return empty
-
-  let events
-  try {
-    // Bounded tail read: this is only context for the draft, never a session replay.
-    events = session.snapshotEvents(Math.max(0, end - HISTORY_EVENT_SCAN), end)
-  } catch {
-    return empty
-  }
-  if (!Array.isArray(events)) return empty
+  const events = sessionTailEvents(ctx, sessionId)
+  if (events === undefined) return empty
 
   const rounds = []
   let round
@@ -319,6 +442,41 @@ function readHistory(ctx, sessionId) {
 }
 
 /**
+ * Read a bounded tail of one session's event log.
+ *
+ * The reader is never allowed to replay the whole session: only the newest
+ * window that could possibly hold the rounds asked for.
+ *
+ * @param ctx - Host context of this bundle.
+ * @param sessionId - Session id to read.
+ * @returns Events oldest-first, or undefined when the log is unavailable.
+ */
+function sessionTailEvents(ctx, sessionId) {
+  let session
+  try {
+    session = ctx.sessions.get(sessionId)
+  } catch {
+    return undefined
+  }
+  if (session === undefined || session === null) return undefined
+
+  let end = 0
+  try {
+    end = Number(session.seq)
+  } catch {
+    return undefined
+  }
+  if (!Number.isFinite(end) || end <= 0) return undefined
+
+  try {
+    const events = session.snapshotEvents(Math.max(0, end - HISTORY_EVENT_SCAN), end)
+    return Array.isArray(events) ? events : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
  * Concatenate the text blocks of one message.
  * @param message - A `user/message` or `assistant/message` payload.
  * @returns Trimmed text, or an empty string when the message carries no text.
@@ -369,7 +527,7 @@ function resolveCwd(ctx, sessionId) {
     const fallback = ctx.workingDirectory.defaultDirectory
     if (typeof fallback === 'string' && isAbsolute(fallback)) return fallback
   } catch {
-    // No default directory: the prompt then omits the working directory.
+    // No default directory: nothing to report.
   }
   return undefined
 }

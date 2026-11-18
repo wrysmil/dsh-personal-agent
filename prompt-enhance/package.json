@@ -1,9 +1,9 @@
 {
   "name": "@local/prompt-enhance",
-  "version": "1.0.1",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
-  "description": "A sparkle button in the composer. One click sends the draft plus the session id and replaces it with a clearer prompt built from the last two conversation rounds; no project files are read and there is no confirm step.",
+  "description": "A sparkle button in the composer. One click sends the draft, its @-references and its attachments, plus the last two conversation rounds, to the session's model, then replaces the draft with the clearer prompt. No confirm step.",
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
