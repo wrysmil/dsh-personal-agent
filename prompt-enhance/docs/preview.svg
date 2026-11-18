@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="200" viewBox="0 0 720 200" role="img" aria-label="Composer with the enhance button">
+  <rect width="720" height="200" fill="#F5F5F3"/>
+  <rect x="16" y="16" width="688" height="168" rx="22" fill="#FFFFFF" stroke="#E4E4E1"/>
+  <text x="48" y="66" font-family="Segoe UI, system-ui, sans-serif" font-size="17" fill="#3A3A38">给登录页加一个记住我勾选框</text>
+  <circle cx="58" cy="140" r="15" fill="#F0F0ED"/>
+  <path d="M58 133v14M51 140h14" stroke="#5B5B58" stroke-width="1.8" stroke-linecap="round"/>
+  <rect x="618" y="76" width="112" height="30" rx="9" fill="#2A2A28"/>
+  <text x="632" y="96" font-family="Segoe UI, system-ui, sans-serif" font-size="13" fill="#FFFFFF">增强提示词</text>
+  <circle cx="666" cy="126" r="16" fill="#EFEFEC"/>
+  <path d="M666 114.5c.22 0 .42.14.49.35l1.2 3.44a3.5 3.5 0 0 0 2.12 2.12l3.44 1.2a.52.52 0 0 1 0 .99l-3.44 1.2a3.5 3.5 0 0 0-2.12 2.12l-1.2 3.44a.52.52 0 0 1-.99 0l-1.2-3.44a3.5 3.5 0 0 0-2.12-2.12l-3.44-1.2a.52.52 0 0 1 0-.99l3.44-1.2a3.5 3.5 0 0 0 2.12-2.12l1.2-3.44a.52.52 0 0 1 .49-.35Z" fill="#3A3A38"/>
+  <path d="M676 133.5c.13 0 .25.08.29.21l.48 1.36 1.36.48a.29.29 0 0 1 0 .55l-1.36.48-.48 1.36a.29.29 0 0 1-.55 0l-.48-1.36-1.36-.48a.29.29 0 0 1 0-.55l1.36-.48.48-1.36a.29.29 0 0 1 .26-.21Z" fill="#3A3A38" opacity="0.75"/>
+</svg>

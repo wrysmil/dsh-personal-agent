@@ -1,0 +1,33 @@
+{
+  "name": "@local/prompt-enhance",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A sparkle button in the composer. Clicking it first shows a one-line confirm (inject AGENTS.md / CLAUDE.md?), then rewrites the draft into a clearer prompt using the last two conversation rounds as context.",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "docs",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  }
+}

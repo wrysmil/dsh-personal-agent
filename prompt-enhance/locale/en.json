@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Prompt enhance",
+    "description": "Adds an enhance button to the right of the composer. Clicking it first shows a one-line confirm above the button, \"Inject AGENTS.md? Yes / No\": Yes also sends AGENTS.md and CLAUDE.md project rules, No uses the last two conversation rounds only. It then rewrites the draft into a directly executable prompt with the session's current model and puts the result back into the draft. The button needs a selected model and is disabled while the draft is empty; the write-back replaces the whole draft, including any reference chips in it.",
+    "detail": "docs/DETAIL.md"
+  }
+}

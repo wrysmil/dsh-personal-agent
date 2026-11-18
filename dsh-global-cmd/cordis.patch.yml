@@ -1,0 +1,13 @@
+# dsh-global-cmd bundle patch：Web 与 Desktop profile 都可以加载这一行 Host 插件。
+# 行名会从 profile 自己的 node_modules 解析（install_bundle 已把本包安装进去）。
+- insert:
+    - id: global-cmd
+      name: dsh-global-cmd
+      config:
+        # Action 数据文件；留空则使用 <DSH_HOME>/global-cmd/actions.json。
+        dataFile: ''
+        # 额外允许访问 Host API 的 authority（host 或 host:port）；
+        # localhost / 127.0.0.1 / ::1 始终允许。
+        trustedHosts: []
+        # 命令超时上限（毫秒），单条 Action 无法超过它。
+        maxTimeoutMs: 1800000

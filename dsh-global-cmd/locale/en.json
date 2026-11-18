@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Global CMD",
+    "description": "A session-independent command panel: clickable Actions plus a live shell for any directory on the host."
+  }
+}

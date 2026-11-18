@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Prompt enhance">
+  <defs>
+    <linearGradient id="pe-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6C5CE7"/>
+      <stop offset="1" stop-color="#3B82F6"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#pe-bg)"/>
+  <path d="M30 13.5c.5 0 .94.32 1.1.79l2.66 7.6a7.8 7.8 0 0 0 4.7 4.7l7.6 2.66a1.15 1.15 0 0 1 0 2.19l-7.6 2.66a7.8 7.8 0 0 0-4.7 4.7l-2.66 7.6a1.15 1.15 0 0 1-2.19 0l-2.66-7.6a7.8 7.8 0 0 0-4.7-4.7l-7.6-2.66a1.15 1.15 0 0 1 0-2.19l7.6-2.66a7.8 7.8 0 0 0 4.7-4.7l2.66-7.6c.16-.47.6-.79 1.09-.79Z" fill="#FFFFFF"/>
+  <path d="M46.5 40.2c.3 0 .56.19.65.47l1.06 3.02 3.02 1.06a.66.66 0 0 1 0 1.26l-3.02 1.06-1.06 3.02a.66.66 0 0 1-1.26 0l-1.06-3.02-3.02-1.06a.66.66 0 0 1 0-1.26l3.02-1.06 1.06-3.02a.66.66 0 0 1 .65-.47Z" fill="#FFFFFF" opacity="0.78"/>
+</svg>
