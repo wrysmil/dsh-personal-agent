@@ -22,8 +22,8 @@
       "name": "@local/prompt-enhance",
       "title": { "en": "Prompt Enhance", "zh": "提示词润色" },
       "description": {
-        "en": "A sparkle button in the composer that rewrites the draft into a clearer prompt using the last two rounds as context.",
-        "zh": "输入框里的润色按钮：结合最近两轮对话，把草稿改写成更清晰的提示词。"
+        "en": "A sparkle button in the composer: one click rewrites the draft into a clearer prompt using only the last two conversation rounds; no project files are read.",
+        "zh": "输入框里的润色按钮：一键把草稿改写成更清晰的提示词，只参考最近两轮对话，不读项目规则文件。"
       },
       "author": "wrysmil",
       "homepage": "https://github.com/wrysmil/dsh-personal-agent/tree/main/prompt-enhance",
@@ -31,13 +31,13 @@
       "metadata": { "category": "custom", "keywords": ["prompt", "rewrite", "composer"] },
       "versions": [
         {
-          "version": "1.0.0",
-          "publishTimestamp": 1794987693,
+          "version": "1.0.1",
+          "publishTimestamp": 1794991134,
           "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
           "source": {
             "type": "git",
             "url": "https://github.com/wrysmil/dsh-personal-agent.git",
-            "commit": "69741c4acc8c27094f3c88a914c2432a09119aef",
+            "commit": "4ffb6b152c5830edcdf9081d9e1c6ed260bede0a",
             "path": "prompt-enhance"
           }
         }
@@ -47,22 +47,22 @@
       "name": "dsh-global-cmd",
       "title": { "en": "Global CMD", "zh": "全局 CMD" },
       "description": {
-        "en": "A resident command panel independent of any session, with custom action buttons that run local commands.",
-        "zh": "不依赖会话的常驻命令面板，支持自定义 Action 按钮一键执行本机命令。"
+        "en": "A resident terminal independent of any session: a draggable multi-tab console with a custom command library; running commands survive plugin updates.",
+        "zh": "不依赖会话的常驻终端：可拖动的多标签控制台，自定义命令库一键执行，命令在插件更新后也不会被打断。"
       },
       "author": "wrysmil",
       "homepage": "https://github.com/wrysmil/dsh-personal-agent/tree/main/dsh-global-cmd",
       "repository": { "url": "https://github.com/wrysmil/dsh-personal-agent.git", "directory": "dsh-global-cmd" },
-      "metadata": { "category": "custom", "keywords": ["commands", "shell", "panel"] },
+      "metadata": { "category": "custom", "keywords": ["commands", "shell", "terminal", "panel"] },
       "versions": [
         {
-          "version": "0.1.0",
-          "publishTimestamp": 1794987693,
+          "version": "0.2.0",
+          "publishTimestamp": 1794991134,
           "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
           "source": {
             "type": "git",
             "url": "https://github.com/wrysmil/dsh-personal-agent.git",
-            "commit": "69741c4acc8c27094f3c88a914c2432a09119aef",
+            "commit": "4ffb6b152c5830edcdf9081d9e1c6ed260bede0a",
             "path": "dsh-global-cmd"
           }
         }
