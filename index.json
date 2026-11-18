@@ -62,7 +62,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/wrysmil/dsh-personal-agent.git",
-            "commit": "a2272b4e5d64345cdcd2506ddccbacc9a22e6bae",
+            "commit": "652909554e18ac8b6a426c0748ea74d57fd140d1",
             "path": "dsh-global-cmd"
           }
         }
