@@ -12,7 +12,7 @@ DSH 里的 Echo/终端工具都是**跟着会话走**的：命令绑在某条会
 
 - **不依赖会话**：入口在 `sidebar.footer.action`（root 作用域），控制台主体在 `shell.overlay`（frame-wide 悬浮层），都属于整个应用框架，不是某条会话。
 - **终端优先**：打开就是标签条 + 输出区 + 内联提示符，命令库收进 `Ctrl+K` 浮层，主界面不堆按钮、示例、说明文字。
-- **多终端**：标签页并存，每个终端有自己的 shell、工作目录、命令历史、输出，标签上直接 ✕ 关掉。
+- **多终端**：标签页并存，每个终端有自己的 shell、工作目录、命令历史、输出；点标签上的 ✕ 会先弹一个确认框，确认后才真的关。
 - **自定义命令**：命令库里保存常用命令，点击即执行；支持分组、指定 shell、指定工作目录、二次确认。
 
 ---
@@ -64,10 +64,12 @@ plugin_manager action=install_bundle target=D:\workspace\dsh-plugins\dsh-global-
 └─────────────────────────────────────────────────────────┘
 ```
 
-窗口主体就是终端，观感照 Windows 命令提示符来：**纯黑底、等宽字体、提示符是「路径 >」**，命令回显成
-`C:\path>命令`，没有气泡、没有说明文字、空闲时也没有状态栏。标签栏右侧那排小按钮是
-**⌫ 清屏 / ⧉ 复制全部输出 / ⌘K 命令库 / ⚙ 偏好 / ✕ 收起**；命令跑起来时才在底部浮出一条
-`● 运行中 · 1.2s  [停止]`。命令库是 `Ctrl+K` 打开的浮层，不占主界面。
+窗口主体就是终端，观感照 Windows 命令提示符来：**深黑底 + 极淡扫描线、等宽字体、提示符是「路径 >」**
+（路径与 `>` 用冷青色并带一点辉光），命令回显成 `C:\path>命令`（路径那段偏青、命令本身是正文色）。
+没有气泡、没有说明文字、**没有「运行中」状态条**。标签栏右侧那排小按钮是
+**⌫ 清屏 / ⧉ 复制全部输出 / ⌘K 命令库 / ⚙ 偏好 / ✕ 收起**；命令在跑的时候，
+**窗口顶沿会亮起一条流动光带** —— 点它就是「停止」，标签上同时亮一个小橙点。命令库是 `Ctrl+K`
+打开的浮层，不占主界面。
 
 收起后界面完全恢复原样，不残留任何浮层。
 
@@ -78,7 +80,7 @@ plugin_manager action=install_bundle target=D:\workspace\dsh-plugins\dsh-global-
 - 在最后一行提示符后面直接敲命令回车 → 后台执行，输出**实时**追加到上方（stdout 正常色、stderr 红色、提示灰色）。
 - 点上面任意一条历史命令行（`C:\path>命令`）→ 把那条命令**放回提示符**，改几个字再回车；点输出区空白也能把焦点交回提示符。
 - `↑` / `↓` 翻历史命令。
-- 命令跑起来后底部出现状态条，点**停止**（或按 `Esc`）终止整棵进程树（Windows 用 `taskkill /t /f`）。
+- 命令跑起来后窗口顶沿出现一条流动光带，点它（或按 `Esc`）终止整棵进程树（Windows 用 `taskkill /t /f`）。
 - 失败的命令会在输出里补一行淡淡的 `[退出码 7 · 0.4s]`；成功的命令像真 cmd 一样不啰嗦。命令**默认不限时**，一直跑到自己结束，或者你按「停止」/关掉这个标签。
 - 提示符里显示的完整工作目录，`cd` 之后立刻跟着变。
 
@@ -90,7 +92,7 @@ plugin_manager action=install_bundle target=D:\workspace\dsh-plugins\dsh-global-
 | `cd ..`、`cd sub\dir`、`cd D:\x`、`cd /d D:\x` | 解析并切换工作目录，失败会提示「不是有效的工作目录」 |
 | `shell` / `shell bash` / `shell powershell` | 查看 / 切换**当前终端**的 shell（不再占用提示符行里的下拉框） |
 | `cls` / `clear` | 清空当前终端输出 |
-| `exit` | 关闭当前终端 |
+| `exit` | 关闭当前终端（同样会先弹确认框） |
 
 只有「纯粹切换目录」的 `cd` 才在本地处理；**带 `&&`、`|`、`;`、`>` 的复合命令整行原样交给 shell**，
 例如 `cd /d D:\workspace\project\aigc_platfrom_back && mvn -pl ruoyi-admin -am clean install -DskipTests -P local`
@@ -98,7 +100,7 @@ plugin_manager action=install_bundle target=D:\workspace\dsh-plugins\dsh-global-
 
 ### 多终端
 
-标签条上的 **＋** 新建（`Ctrl+T`），点标签切换（`Ctrl+1..9` 直达），标签上的 **✕** 或 `Ctrl+W` 关闭当前终端。
+标签条上的 **＋** 新建（`Ctrl+T`），点标签切换（`Ctrl+1..9` 直达），标签上的 **✕** 或 `Ctrl+W` 关闭当前终端 —— 这三种方式都会先弹一个确认框（`Enter` 确认、`Esc` 取消）；终端里还有命令在跑时按钮会变成「终止并关闭」，提示会告诉你命令会被一起终止。
 每个终端独立保存：shell、工作目录、历史、输出。关掉最后一个终端会自动补一个新的，不会关成空白。
 终端结构（shell + 目录）与活动终端位置存在 `localStorage`，重开 DSH 能恢复。
 
@@ -153,10 +155,26 @@ plugin_manager action=install_bundle target=D:\workspace\dsh-plugins\dsh-global-
 | 内容 | 位置 |
 | --- | --- |
 | 命令库 + 全局设置 | `<DSH_HOME>/global-cmd/actions.json`（本机为 `C:\Users\Huangqh\.dsh\global-cmd\actions.json`） |
-| 终端布局（标签、高度、活动标签） | 浏览器 `localStorage`，键 `dsh-global-cmd:console:v1` |
-| 命令输出 | 只在内存里，最多保留 3000 行 / 400KB / 最近 30 个任务 |
+| 任务登记表 + 每个任务的输出日志 | `<DSH_HOME>/global-cmd/jobs/`（`registry.json` + `<任务 id>.out.log` / `.err.log`） |
+| 终端布局（标签、高度、活动标签、正在跑的任务） | 浏览器 `localStorage`，键 `dsh-global-cmd:console:v1` |
+| 屏幕上保留的输出行 | 最近 3000 行；磁盘日志按任务保留最近 20 个 |
 
 写入是原子的（临时文件 + rename）。想重置命令库，删掉 `actions.json` 后重新加载插件即可。
+
+### 更新插件、刷新页面时命令不会中断
+
+命令的 stdout/stderr **由 shell 自己重定向进日志文件**（`cmd /c "( 命令 ) 1> 输出.log 2> 错误.log"`，
+不是接在本插件进程的管道上），任务清单也落在 `jobs/registry.json` 里，所以：
+
+- 插件升级 / 关→开重载（`set_bundle`）时，正在跑的 `mvn install`、`npm run dev` 继续跑，
+  新模块加载时会把它们接回来，输出接着读；
+- 浏览器刷新（`Ctrl+R`）时，标签栏会重新接上那条命令，并把之前的输出重新拉一遍；
+- 唯一会被丢的是「退出码」和「超时计时器」：如果命令是在插件重载**期间**结束的，退出码显示为未知
+  （`[进程已结束（退出码未知）]`）；重载前设的超时也只在旧模块里生效。
+
+> 代价：为了把输出交给子进程自己写文件，命令会被包进 cmd 的分组里执行
+> （`cmd /d /s /c "( 你的命令 ) 1> 输出.log 2> 错误.log"`）。所以命令里**不要出现未配对的括号**，
+> 其余 `&&`、`|`、`>`、引号都正常。
 
 也可在插件 `cordis.patch.yml` 的 `config` 里覆盖：`dataFile`（换数据文件）、`trustedHosts`（额外信任的 Host 名）、
 `maxTimeoutMs`（单条命令超时上限；命令本身默认不限时）。
@@ -176,6 +194,7 @@ plugin_manager action=install_bundle target=D:\workspace\dsh-plugins\dsh-global-
 | POST | `/exec` | 启动命令 `{command, shell, cwd, timeoutMs}` → `{id}` |
 | GET | `/exec/<id>?after=N` | 增量读取输出（poll），`done` 时带退出码 |
 | POST | `/exec/<id>/kill` | 终止进程树 |
+| GET | `/diag` | 自检：用同一套 spawn + 重定向跑一条固定命令，回显 stdout/stderr 是否落进日志文件 |
 
 ---
 

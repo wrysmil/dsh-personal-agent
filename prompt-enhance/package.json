@@ -1,9 +1,9 @@
 {
   "name": "@local/prompt-enhance",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
-  "description": "A sparkle button in the composer. Clicking it first shows a one-line confirm (inject AGENTS.md / CLAUDE.md?), then rewrites the draft into a clearer prompt using the last two conversation rounds as context.",
+  "description": "A sparkle button in the composer. One click sends the draft plus the session id and replaces it with a clearer prompt built from the last two conversation rounds; no project files are read and there is no confirm step.",
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",

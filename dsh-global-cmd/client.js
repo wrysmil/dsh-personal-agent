@@ -171,12 +171,23 @@ window.__ModuleLoader__.load({
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
   font-size: 13px; line-height: 1.5;
   color: var(--dsw-alias-label-primary, #e9e9ec);
+  /* 控制台自己的配色：比主题更冷、更暗，接近 HUD 而不是普通面板 */
+  --gcmd-bg: #06090d;
+  --gcmd-bg-2: #0a1017;
+  --gcmd-bg-3: #0d141c;
+  --gcmd-line: #17222d;
+  --gcmd-line-2: #22303d;
+  --gcmd-accent: #35e6c5;
+  --gcmd-accent-2: #4d9bff;
+  --gcmd-text: #dbe4ec;
+  --gcmd-dim: #78889a;
 }
 @keyframes gcmd-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes gcmd-pop { from { opacity: 0; transform: scale(.99); } to { opacity: 1; transform: none; } }
 .gcmd-root *, .gcmd-root *::before, .gcmd-root *::after { box-sizing: border-box; }
 .gcmd-root button { font: inherit; color: inherit; cursor: pointer; }
 .gcmd-root input, .gcmd-root textarea, .gcmd-root select { font: inherit; color: inherit; }
+.gcmd-root ::selection { background: rgba(53, 230, 197, .26); color: #eafaf6; }
 
 /* 侧栏底部入口（与设置并列，不悬浮在内容上） */
 .gcmd-foot {
@@ -198,11 +209,20 @@ window.__ModuleLoader__.load({
   position: fixed; pointer-events: auto;
   display: flex; flex-direction: column; overflow: hidden;
   width: min(880px, 94vw); height: min(680px, 88vh);
-  background: var(--dsw-alias-bg-base, #0c0c0c);
-  border: 1px solid var(--dsw-alias-border-l2, #3a3a41);
-  border-radius: 10px;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, .6), 0 2px 10px rgba(0, 0, 0, .4);
+  background: linear-gradient(180deg, #0a1017 0%, #06090d 62%, #05080b 100%);
+  border: 1px solid rgba(53, 230, 197, .22);
+  border-radius: 8px;
+  box-shadow:
+    0 26px 70px rgba(0, 0, 0, .68),
+    0 0 0 1px rgba(0, 0, 0, .5),
+    0 0 46px rgba(53, 230, 197, .07);
   animation: gcmd-pop .12s ease-out;
+}
+/* 顶边一道发光细线，像设备通电后的状态灯 */
+.gcmd-dock::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+  background: linear-gradient(90deg, rgba(53, 230, 197, 0), rgba(53, 230, 197, .75) 30%, rgba(77, 155, 255, .55) 70%, rgba(77, 155, 255, 0));
+  pointer-events: none; z-index: 6;
 }
 .gcmd-dock[data-dragging="true"] { user-select: none; }
 .gcmd-dock[data-dragging="true"] .gcmd-scroll { pointer-events: none; }
@@ -302,128 +322,133 @@ window.__ModuleLoader__.load({
 }
 .gcmd-grip:hover { background: var(--dsw-alias-brand-primary, #4f8cff); opacity: .35; }
 
-/* 标签栏 */
+/* 标签栏：像一块被切出来的金属条，活动标签带发光下沿 */
 .gcmd-tabs {
-  flex: none; display: flex; align-items: stretch; gap: 2px;
+  position: relative; flex: none; display: flex; align-items: stretch; gap: 2px;
   height: 36px; padding: 0 8px;
-  background: var(--dsw-alias-bg-layer-2, #1a1a1a);
-  border-bottom: 1px solid var(--dsw-alias-border-l1, #262626);
+  background: linear-gradient(180deg, #0c141c, #080d13);
+  border-bottom: 1px solid var(--gcmd-line);
 }
 .gcmd-tab {
   position: relative; display: inline-flex; align-items: center; gap: 6px;
-  max-width: 210px; padding: 0 9px; margin: 5px 0; border-radius: 7px;
+  max-width: 210px; padding: 0 9px; margin: 5px 0; border-radius: 5px;
   background: transparent; border: 1px solid transparent;
-  color: var(--dsw-alias-label-secondary, #9a9aa2); font-size: 12px;
-  transition: background .12s ease, color .12s ease;
+  color: var(--gcmd-dim); font-size: 12px; letter-spacing: .01em;
+  transition: background .12s ease, color .12s ease, border-color .12s ease;
 }
-.gcmd-tab:hover { background: rgba(255, 255, 255, .05); color: var(--dsw-alias-label-primary, #e9e9ec); }
+.gcmd-tab:hover { background: rgba(255, 255, 255, .04); color: var(--gcmd-text); }
 .gcmd-tab[data-active="true"] {
-  background: var(--dsw-alias-bg-base, #0c0c0c);
-  border-color: var(--dsw-alias-border-l1, #333333);
-  color: var(--dsw-alias-label-primary, #e9e9ec);
+  background: linear-gradient(180deg, rgba(53, 230, 197, .1), rgba(53, 230, 197, .03));
+  border-color: rgba(53, 230, 197, .34);
+  color: #eafaf6;
 }
-.gcmd-tab-glyph { font-family: ui-monospace, Consolas, monospace; font-size: 11px; opacity: .8; }
+.gcmd-tab[data-active="true"]::after {
+  content: ''; position: absolute; left: 6px; right: 6px; bottom: -5px; height: 1px;
+  background: linear-gradient(90deg, rgba(53, 230, 197, 0), rgba(53, 230, 197, .9), rgba(53, 230, 197, 0));
+}
+.gcmd-tab-glyph { font-family: ui-monospace, Consolas, monospace; font-size: 11px; color: var(--gcmd-accent); opacity: .75; }
 .gcmd-tab-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gcmd-tab-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--dsw-alias-state-warn-primary, #e5a13a); }
+.gcmd-tab-dot {
+  width: 5px; height: 5px; border-radius: 50%; flex: none;
+  background: var(--gcmd-amber, #ffb347);
+  box-shadow: 0 0 8px rgba(255, 179, 71, .9);
+  animation: gcmd-pulse 1.1s ease-in-out infinite;
+}
 .gcmd-tab-close {
   display: grid; place-items: center; width: 15px; height: 15px; padding: 0;
-  border: none; border-radius: 4px; background: transparent;
-  color: var(--dsw-alias-label-secondary, #9a9aa2); font-size: 12px; opacity: 0;
-  transition: opacity .12s ease, background .12s ease;
+  border: none; border-radius: 3px; background: transparent;
+  color: var(--gcmd-dim); font-size: 12px; opacity: 0;
+  transition: opacity .12s ease, background .12s ease, color .12s ease;
 }
 .gcmd-tab:hover .gcmd-tab-close, .gcmd-tab[data-active="true"] .gcmd-tab-close { opacity: 1; }
-.gcmd-tab-close:hover { background: rgba(255, 255, 255, .12); color: var(--dsw-alias-label-primary, #fff); }
+.gcmd-tab-close:hover { background: rgba(255, 95, 109, .18); color: #ff5f6d; }
 .gcmd-tabs-spacer { flex: 1; cursor: grab; }
 .gcmd-tabs-spacer:active { cursor: grabbing; }
 
 .gcmd-tool {
   display: inline-flex; align-items: center; gap: 5px; align-self: center;
   height: 26px; padding: 0 8px; margin-left: 4px;
-  border-radius: 6px; border: 1px solid transparent; background: transparent;
-  color: var(--dsw-alias-label-secondary, #9a9aa2); font-size: 12px;
+  border-radius: 5px; border: 1px solid transparent; background: transparent;
+  color: var(--gcmd-dim); font-size: 12px;
   transition: color .12s ease, background .12s ease, border-color .12s ease;
 }
-.gcmd-tool:hover { color: var(--dsw-alias-label-primary, #fff); background: rgba(255, 255, 255, .07); }
-.gcmd-tool[data-active="true"] { color: var(--dsw-alias-label-primary, #fff); border-color: var(--dsw-alias-border-l1, #34343a); }
+.gcmd-tool:hover {
+  color: var(--gcmd-accent); background: rgba(53, 230, 197, .1);
+  border-color: rgba(53, 230, 197, .26);
+}
+.gcmd-tool[data-active="true"] { color: var(--gcmd-accent); border-color: rgba(53, 230, 197, .34); }
 .gcmd-tool-icon { font-size: 13px; line-height: 1; }
 .gcmd-kbd {
   font-family: ui-monospace, Consolas, monospace; font-size: 10px; opacity: .55;
-  padding: 1px 4px; border-radius: 3px; border: 1px solid var(--dsw-alias-border-l1, #34343a);
+  padding: 1px 4px; border-radius: 3px; border: 1px solid var(--gcmd-line-2);
 }
 
-/* 输出区：照 Windows 命令提示符的样子（纯黑底、等宽、无气泡） */
+/* 输出区：纯黑底 + 极淡扫描线，等宽字体，像一块通电的终端屏 */
 .gcmd-scroll {
   flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
-  padding: 10px 12px 6px;
-  background: var(--dsw-alias-bg-base, #0c0c0c);
-  color: var(--dsw-alias-label-primary, #cccccc);
+  padding: 12px 14px 8px;
+  background-color: var(--gcmd-bg);
+  background-image:
+    radial-gradient(120% 70% at 50% 0%, rgba(53, 230, 197, .06), transparent 62%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, .014) 0 1px, transparent 1px 3px);
+  color: var(--gcmd-text);
   font-family: "Cascadia Mono", Consolas, "Courier New", ui-monospace, monospace;
-  font-size: 14px; line-height: 1.42;
+  font-size: 14px; line-height: 1.44;
   scrollbar-width: thin;
+  box-shadow: inset 1px 0 0 rgba(53, 230, 197, .1), inset 0 1px 0 rgba(53, 230, 197, .05);
 }
 .gcmd-scroll::-webkit-scrollbar { width: 10px; }
-.gcmd-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .14); border-radius: 6px; border: 3px solid transparent; background-clip: content-box; }
+.gcmd-scroll::-webkit-scrollbar-thumb { background: rgba(53, 230, 197, .18); border-radius: 6px; border: 3px solid transparent; background-clip: content-box; }
+.gcmd-scroll::-webkit-scrollbar-thumb:hover { background: rgba(53, 230, 197, .32); background-clip: content-box; }
 .gcmd-line { white-space: pre-wrap; word-break: break-word; padding: 0; }
-.gcmd-line[data-kind="cmd"] { display: block; margin-top: 0; color: inherit; }
-.gcmd-line[data-kind="out"] { color: inherit; }
-.gcmd-line[data-kind="err"] { color: var(--dsw-alias-state-error-primary, #ff6b6b); }
-.gcmd-line[data-kind="info"] { color: var(--dsw-alias-label-secondary, #8a8a8a); }
+.gcmd-line[data-kind="cmd"] { display: block; margin-top: 0; color: var(--gcmd-text); }
+.gcmd-line[data-kind="out"] { color: var(--gcmd-text); }
+.gcmd-line[data-kind="err"] { color: #ff6f7d; }
+.gcmd-line[data-kind="info"] { color: var(--gcmd-dim); }
+/* 回显行里那段「C:\path>」用冷色，命令本身保持正文色 */
+.gcmd-echo-path { color: rgba(53, 230, 197, .72); }
 /* cmd 里回显的那一行 = 「C:\path>命令」，整行可点，点回输入框改 */
-.gcmd-line-reuse { cursor: pointer; }
-.gcmd-line-reuse:hover { background: rgba(255, 255, 255, .07); }
+.gcmd-line-reuse { cursor: pointer; border-radius: 3px; }
+.gcmd-line-reuse:hover { background: rgba(53, 230, 197, .09); }
 /* 首屏横幅：Microsoft Windows [Version …] + 版权行 */
-.gcmd-banner { white-space: pre-wrap; padding: 0 0 12px; color: inherit; }
+.gcmd-banner { white-space: pre-wrap; padding: 0 0 12px; color: var(--gcmd-dim); }
 
 /* 提示符：紧接在输出区最后一行，「路径>」之后直接打字 */
 .gcmd-prompt {
   display: flex; align-items: baseline; gap: 0;
-  margin-top: 0; padding: 0;
+  margin-top: 0; padding: 2px 0 0;
   background: transparent;
   font-family: inherit; font-size: inherit; line-height: inherit;
 }
 .gcmd-path {
   flex: none; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  color: inherit; user-select: none;
+  color: var(--gcmd-accent); user-select: none;
+  text-shadow: 0 0 14px rgba(53, 230, 197, .28);
 }
-.gcmd-prompt-mark { flex: none; color: inherit; user-select: none; }
+.gcmd-prompt-mark {
+  flex: none; color: var(--gcmd-accent); user-select: none;
+  text-shadow: 0 0 14px rgba(53, 230, 197, .34);
+}
 .gcmd-input {
-  flex: 1; min-width: 0; height: 1.42em; padding: 0; border: none; outline: none;
-  background: transparent; color: inherit;
+  flex: 1; min-width: 0; height: 1.44em; padding: 0; border: none; outline: none;
+  background: transparent; color: #eef7fb;
   font-family: inherit; font-size: inherit; line-height: inherit;
-  caret-color: var(--dsw-alias-label-primary, #cccccc);
+  caret-color: var(--gcmd-accent);
 }
-.gcmd-input::placeholder { color: var(--dsw-alias-label-secondary, #5f5f5f); }
+.gcmd-input::placeholder { color: #4d5b69; }
 
-/* 运行中才出现的细状态条（真 cmd 没有状态栏，空闲时整条不渲染） */
-.gcmd-status {
-  flex: none; display: flex; align-items: center; gap: 8px;
-  height: 24px; padding: 0 12px;
-  background: var(--dsw-alias-bg-base, #0c0c0c);
-  border-top: 1px solid var(--dsw-alias-border-l1, #262626);
-  color: var(--dsw-alias-label-secondary, #8a8a8a);
-  font-family: "Cascadia Mono", Consolas, ui-monospace, monospace; font-size: 12px;
+/* 命令在跑的时候，只让窗口顶沿亮起一条流动光带：点它等于「停止」，不再放状态文字 */
+.gcmd-progress {
+  position: absolute; left: 0; right: 0; top: 0; height: 2px; z-index: 7;
+  cursor: pointer;
+  background-image: linear-gradient(90deg, rgba(53, 230, 197, 0), var(--gcmd-accent) 34%, var(--gcmd-accent-2) 66%, rgba(77, 155, 255, 0));
+  background-size: 220% 100%;
+  animation: gcmd-scan 1.5s linear infinite;
 }
-.gcmd-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dsw-alias-state-idle-primary, #6f6f78); flex: none; }
-.gcmd-dot[data-state="running"] { background: var(--dsw-alias-state-warn-primary, #e5a13a); animation: gcmd-pulse 1.1s ease-in-out infinite; }
-.gcmd-dot[data-state="ok"] { background: var(--dsw-alias-state-success-primary, #46c07a); }
-.gcmd-dot[data-state="err"] { background: var(--dsw-alias-state-error-primary, #ff6b6b); }
-@keyframes gcmd-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.gcmd-progress:hover { height: 3px; }
+@keyframes gcmd-scan { from { background-position: 0% 0; } to { background-position: 220% 0; } }
+@keyframes gcmd-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
 .gcmd-spacer { flex: 1; }
-.gcmd-hint { opacity: .8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gcmd-hint kbd { font-family: ui-monospace, Consolas, monospace; font-size: 10.5px; opacity: .9; }
-.gcmd-icon-btn {
-  display: grid; place-items: center; width: 20px; height: 20px; padding: 0;
-  border: none; border-radius: 4px; background: transparent;
-  color: var(--dsw-alias-label-secondary, #8b8b94); font-size: 12px;
-}
-.gcmd-icon-btn:hover { background: rgba(255, 255, 255, .1); color: var(--dsw-alias-label-primary, #fff); }
-.gcmd-stop {
-  flex: none; height: 20px; padding: 0 9px; border-radius: 4px;
-  border: 1px solid var(--dsw-alias-state-error-primary, #ff6b6b);
-  background: transparent; color: var(--dsw-alias-state-error-primary, #ff6b6b);
-  font-size: 11px; line-height: 1;
-}
-.gcmd-stop:hover { background: rgba(255, 107, 107, .14); }
 
 /* 命令库 / 弹层 */
 .gcmd-overlay {
@@ -435,17 +460,17 @@ window.__ModuleLoader__.load({
 .gcmd-sheet {
   width: min(620px, calc(100% - 40px)); max-height: calc(100% - 84px);
   display: flex; flex-direction: column; overflow: hidden;
-  background: var(--dsw-alias-bg-overlay, #202024);
-  border: 1px solid var(--dsw-alias-border-l2, #3a3a41); border-radius: 10px;
-  box-shadow: 0 22px 60px rgba(0, 0, 0, .5);
+  background: linear-gradient(180deg, #0c131a, #070b10);
+  border: 1px solid rgba(53, 230, 197, .2); border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .62), 0 0 40px rgba(53, 230, 197, .06);
 }
 .gcmd-sheet-head {
-  display: flex; align-items: center; gap: 8px; padding: 9px 12px;
-  border-bottom: 1px solid var(--dsw-alias-border-l1, #34343a);
-  color: var(--dsw-alias-label-primary, #e9e9ec); font-size: 12.5px;
+  display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+  border-bottom: 1px solid var(--gcmd-line);
+  color: var(--gcmd-text); font-size: 12.5px; letter-spacing: .02em;
 }
-.gcmd-sheet-title { font-weight: 500; }
-.gcmd-sheet-count { color: var(--dsw-alias-label-secondary, #8b8b94); font-size: 11.5px; }
+.gcmd-sheet-title { font-weight: 600; }
+.gcmd-sheet-count { color: var(--gcmd-dim); font-size: 11.5px; }
 .gcmd-sheet-close {
   margin-left: auto; display: grid; place-items: center; width: 22px; height: 22px;
   border: none; border-radius: 5px; background: transparent;
@@ -457,20 +482,23 @@ window.__ModuleLoader__.load({
   border-bottom: 1px solid var(--dsw-alias-border-l1, #34343a);
 }
 .gcmd-filter-input {
-  flex: 1; height: 26px; padding: 0 8px; border-radius: 6px;
-  border: 1px solid var(--dsw-alias-border-l1, #34343a);
-  background: var(--dsw-alias-bg-base, #141416); outline: none;
-  color: var(--dsw-alias-label-primary, #e9e9ec); font-size: 12.5px;
+  flex: 1; height: 26px; padding: 0 8px; border-radius: 5px;
+  border: 1px solid var(--gcmd-line-2);
+  background: var(--gcmd-bg); outline: none;
+  color: var(--gcmd-text); font-size: 12.5px;
 }
-.gcmd-filter-input:focus { border-color: var(--dsw-alias-brand-primary, #4f8cff); }
+.gcmd-filter-input:focus { border-color: rgba(53, 230, 197, .5); box-shadow: 0 0 0 1px rgba(53, 230, 197, .18); }
 .gcmd-list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px; }
 .gcmd-item {
   display: flex; align-items: center; gap: 9px; width: 100%;
   padding: 7px 9px; border: 1px solid transparent; border-radius: 7px;
   background: transparent; text-align: left;
 }
-.gcmd-item[data-active="true"] { background: rgba(79, 140, 255, .14); border-color: rgba(79, 140, 255, .4); }
-.gcmd-item-mark { flex: none; color: var(--dsw-alias-brand-primary, #4f8cff); font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
+.gcmd-item[data-active="true"] {
+  background: linear-gradient(90deg, rgba(53, 230, 197, .13), rgba(53, 230, 197, .03));
+  border-color: rgba(53, 230, 197, .38);
+}
+.gcmd-item-mark { flex: none; color: var(--gcmd-accent); font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
 .gcmd-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .gcmd-item-name { color: var(--dsw-alias-label-primary, #e9e9ec); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gcmd-item-cmd {
@@ -508,12 +536,15 @@ window.__ModuleLoader__.load({
 .gcmd-field { display: flex; flex-direction: column; gap: 4px; }
 .gcmd-field-label { color: var(--dsw-alias-label-secondary, #8f8f98); font-size: 11.5px; }
 .gcmd-field input, .gcmd-field select, .gcmd-field textarea {
-  width: 100%; padding: 6px 8px; border-radius: 6px;
-  border: 1px solid var(--dsw-alias-border-l1, #34343a);
-  background: var(--dsw-alias-bg-base, #141416); outline: none;
-  color: var(--dsw-alias-label-primary, #e9e9ec); font-size: 12.5px;
+  width: 100%; padding: 6px 8px; border-radius: 5px;
+  border: 1px solid var(--gcmd-line-2);
+  background: var(--gcmd-bg); outline: none;
+  color: var(--gcmd-text); font-size: 12.5px;
 }
-.gcmd-field input:focus, .gcmd-field select:focus, .gcmd-field textarea:focus { border-color: var(--dsw-alias-brand-primary, #4f8cff); }
+.gcmd-field input:focus, .gcmd-field select:focus, .gcmd-field textarea:focus {
+  border-color: rgba(53, 230, 197, .5);
+  box-shadow: 0 0 0 1px rgba(53, 230, 197, .18);
+}
 .gcmd-field textarea {
   min-height: 84px; resize: vertical;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; line-height: 1.5;
@@ -531,21 +562,27 @@ window.__ModuleLoader__.load({
   color: var(--dsw-alias-label-primary, #e9e9ec);
 }
 .gcmd-btn:hover { border-color: var(--dsw-alias-border-l2, #55555e); }
-.gcmd-btn[data-tone="primary"] { background: #3b6ef0; border-color: #3b6ef0; color: #fff; }
-.gcmd-btn[data-tone="primary"]:hover { background: #2f5cd4; border-color: #2f5cd4; }
-.gcmd-btn[data-tone="danger"] { color: var(--dsw-alias-state-error-primary, #ff6b6b); border-color: rgba(255, 107, 107, .4); }
+.gcmd-btn[data-tone="primary"] {
+  background: linear-gradient(180deg, #3d8bff, #1f63d0);
+  border-color: #3d8bff; color: #fff;
+  box-shadow: 0 4px 14px rgba(61, 139, 255, .28);
+}
+.gcmd-btn[data-tone="primary"]:hover { background: linear-gradient(180deg, #4d97ff, #276bd8); border-color: #4d97ff; }
+.gcmd-btn[data-tone="danger"] { color: #ff6f7d; border-color: rgba(255, 111, 125, .42); }
 .gcmd-btn:disabled { opacity: .5; cursor: default; }
 .gcmd-modal {
   position: absolute; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center;
-  padding: 16px; background: rgba(6, 6, 8, .52); border-radius: 10px;
+  padding: 16px; background: rgba(4, 7, 10, .62); border-radius: 8px; backdrop-filter: blur(2px);
 }
 .gcmd-modal-card {
-  width: min(330px, 88%); padding: 14px 16px 12px; border-radius: 10px;
-  background: var(--dsw-alias-bg-layer-1, #1b1b20); border: 1px solid var(--dsw-alias-border-l2, #45454f);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, .45); animation: gcmd-pop .12s ease-out;
+  width: min(340px, 88%); padding: 16px 18px 14px; border-radius: 8px;
+  background: linear-gradient(180deg, #0d141b, #080c11);
+  border: 1px solid rgba(53, 230, 197, .26);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .6), 0 0 34px rgba(53, 230, 197, .06);
+  animation: gcmd-pop .12s ease-out;
 }
-.gcmd-modal-title { font-size: 13px; font-weight: 600; color: var(--dsw-alias-label-primary, #e9e9ec); }
-.gcmd-modal-text { margin-top: 6px; font-size: 12px; line-height: 1.5; color: var(--dsw-alias-label-secondary, #9a9aa4); }
+.gcmd-modal-title { font-size: 13px; font-weight: 600; color: var(--gcmd-text); }
+.gcmd-modal-text { margin-top: 6px; font-size: 12px; line-height: 1.55; color: var(--gcmd-dim); }
 .gcmd-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 .gcmd-modal-btn {
   height: 26px; padding: 0 12px; border-radius: 6px; font-size: 12px;
@@ -556,12 +593,12 @@ window.__ModuleLoader__.load({
 .gcmd-modal-btn[data-tone="danger"] { background: #c4453f; border-color: #c4453f; color: #fff; }
 .gcmd-modal-btn[data-tone="danger"]:hover { background: #a83630; border-color: #a83630; }
 .gcmd-notice {
-  position: absolute; left: 50%; bottom: 74px; transform: translateX(-50%);
-  padding: 5px 12px; border-radius: 999px; font-size: 12px;
-  background: var(--dsw-alias-bg-overlay, #202024);
-  border: 1px solid var(--dsw-alias-border-l2, #3a3a41);
-  color: var(--dsw-alias-label-primary, #e9e9ec);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+  position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+  padding: 6px 14px; border-radius: 999px; font-size: 12px;
+  background: rgba(10, 16, 22, .95);
+  border: 1px solid rgba(53, 230, 197, .3);
+  color: var(--gcmd-text);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .45), 0 0 22px rgba(53, 230, 197, .1);
   pointer-events: none;
 }
 `
@@ -692,8 +729,14 @@ window.__ModuleLoader__.load({
         return
       }
       store.patchTab(tabId, (tab) => ({ running: { id: jobId, command, startedAt: tab.running?.startedAt ?? Date.now() } }))
+      persistTabs()
+      startPolling(tabId, jobId)
+    }
 
+    /** 轮询一个任务直到结束；页面刷新后也用它把还在跑的任务接回来 */
+    function startPolling(tabId, jobId) {
       let after = 0
+      let notACommand = false
       const tick = async () => {
         timers.delete(jobId)
         if (!getTab(tabId)) return
@@ -701,12 +744,26 @@ window.__ModuleLoader__.load({
         try {
           result = await api.poll(jobId, after)
         } catch (error) {
-          pushLine(tabId, 'err', `读取输出失败：${errorText(error)}`)
+          const message = errorText(error)
+          pushLine(
+            tabId,
+            'info',
+            message.includes('任务不存在')
+              ? '[这条命令已经不在 Host 里了（插件重载过，或任务已被清理）]'
+              : `读取输出失败：${message}`,
+          )
           store.patchTab(tabId, { running: null })
+          persistTabs()
           return
         }
         after = result.next
-        pushLines(tabId, chunksToLines(result.chunks || []))
+        const incoming = chunksToLines(result.chunks || [])
+        for (const line of incoming) {
+          if (line.kind === 'err' && /不是内部或外部命令|无法将.*项识别为|is not recognized as an internal/i.test(line.text)) {
+            notACommand = true
+          }
+        }
+        pushLines(tabId, incoming)
         if (!result.done) {
           timers.set(jobId, window.setTimeout(tick, POLL_MS))
           return
@@ -719,11 +776,22 @@ window.__ModuleLoader__.load({
             timedOut: result.timedOut === true,
           },
         })
+        persistTabs()
         // 失败/超时在输出里补一行淡提示（成功的命令像 cmd 一样什么都不多说）
         if (result.timedOut === true) {
           pushLine(tabId, 'info', `[已超时终止 · ${formatDuration(Math.max(1, result.endedAt - result.startedAt))}]`)
+        } else if (result.exitCode === null) {
+          pushLine(tabId, 'info', `[进程已结束（退出码未知）· ${formatDuration(Math.max(1, result.endedAt - result.startedAt))}]`)
         } else if (result.exitCode !== 0) {
           pushLine(tabId, 'info', `[退出码 ${result.exitCode} · ${formatDuration(Math.max(1, result.endedAt - result.startedAt))}]`)
+        }
+        // cmd 里没有的命令：给出「换 cmd 等价物 / 或切到 Git Bash」的提示
+        if (notACommand) {
+          pushLine(
+            tabId,
+            'info',
+            '当前终端是 cmd：`ls`、`pwd`、`cat`、`ps` 这类是 Unix 命令，可以换成 `dir`、`cd`、`type`、`tasklist`，或者用内置命令 `shell bash` 切到 Git Bash。',
+          )
         }
       }
       timers.set(jobId, window.setTimeout(tick, POLL_MS))
@@ -824,7 +892,15 @@ window.__ModuleLoader__.load({
       writePrefs({
         height: state.dockHeight,
         activeIndex: Math.max(0, state.tabs.findIndex((tab) => tab.id === state.activeId)),
-        tabs: state.tabs.map((tab) => ({ shell: tab.shell, cwd: tab.cwd })),
+        tabs: state.tabs.map((tab) => ({
+          shell: tab.shell,
+          cwd: tab.cwd,
+          // 记下正在跑的任务 id：刷新页面后能把这条命令接回来，而不是当成没了
+          running:
+            tab.running && tab.running.id
+              ? { id: tab.running.id, command: tab.running.command, startedAt: tab.running.startedAt }
+              : null,
+        })),
       })
     }
 
@@ -984,12 +1060,21 @@ window.__ModuleLoader__.load({
         const settings = { ...store.get().settings, ...(remote.settings || {}) }
         let tabs
         if (seedTabs) {
-          tabs = seedTabs.map((seed) =>
-            makeTab({
+          tabs = seedTabs.map((seed) => {
+            const tab = makeTab({
               shell: seed.shell || settings.defaultShell || 'auto',
               cwd: seed.cwd || defaultCwdFor(settings, env),
-            }),
-          )
+            })
+            // 刷新前还有命令在跑：把任务 id 接回来，输出从 Host 重新拉一遍
+            if (seed.running && typeof seed.running.id === 'string') {
+              tab.running = {
+                id: seed.running.id,
+                command: typeof seed.running.command === 'string' ? seed.running.command : '',
+                startedAt: Number(seed.running.startedAt) || Date.now(),
+              }
+            }
+            return tab
+          })
         } else {
           tabs = [makeTab({ shell: settings.defaultShell || 'auto', cwd: defaultCwdFor(settings, env) })]
         }
@@ -1003,6 +1088,11 @@ window.__ModuleLoader__.load({
           tabs,
           activeId: (restored || tabs[0]).id,
         })
+        for (const tab of tabs) {
+          if (!tab.running?.id) continue
+          pushLine(tab.id, 'info', `[接上刷新前还在跑的命令：${tab.running.command || '（未知命令）'}]`)
+          startPolling(tab.id, tab.running.id)
+        }
         bootState = 'done'
       } catch (error) {
         bootState = 'idle'
@@ -1026,7 +1116,7 @@ window.__ModuleLoader__.load({
             title: onReuse ? '点一下把这条命令放回输入框再改' : undefined,
             onClick: onReuse,
           },
-          h('span', { className: 'gcmd-prompt-mark' }, `${line.cwd || ''}>`),
+          h('span', { className: 'gcmd-echo-path' }, `${line.cwd || ''}>`),
           line.text,
         )
       }
@@ -1160,39 +1250,12 @@ window.__ModuleLoader__.load({
           spellCheck: false,
           autoComplete: 'off',
           // 真 cmd 里提示符后面是空的：只有没对焦时才提示一句
-          placeholder: running ? '命令运行中…' : focused ? '' : '输入命令，回车执行',
+          placeholder: focused ? '' : '输入命令，回车执行',
           onChange: (event) => commit(event.target.value),
           onFocus: () => setFocused(true),
           onBlur: () => setFocused(false),
           onKeyDown,
         }),
-      )
-    }
-
-    /* --------------------------- 组件：运行中状态条 --------------------------- */
-
-    /** 真 cmd 没有状态栏：只有命令在跑时才浮出这一条，给一个停止按钮 */
-    function StatusBar({ tab }) {
-      const [, force] = useState(0)
-      const running = tab ? tab.running : null
-
-      useEffect(() => {
-        if (!running) return undefined
-        const timer = window.setInterval(() => force((n) => n + 1), 250)
-        return () => window.clearInterval(timer)
-      }, [running ? 'run' : 'idle'])
-
-      if (!tab || !running) return null
-      const elapsed = formatDuration(Date.now() - (running.startedAt || Date.now()))
-
-      return h(
-        'div',
-        { className: 'gcmd-status' },
-        h('span', { className: 'gcmd-dot', 'data-state': 'running' }),
-        h('span', null, `运行中 · ${elapsed}`),
-        h('span', { className: 'gcmd-spacer' }),
-        h('span', { className: 'gcmd-hint' }, h('kbd', null, 'Esc'), ' 停止'),
-        h('button', { className: 'gcmd-stop', title: '终止这个命令（Esc）', onClick: () => stopRun(tab.id) }, '停止'),
       )
     }
 
@@ -1838,12 +1901,22 @@ window.__ModuleLoader__.load({
         {
           className: 'gcmd-dock',
           'data-dragging': state.dragging ? 'true' : 'false',
+          'data-running': tab && tab.running ? 'true' : 'false',
           style: { left: `${pos.x}px`, top: `${pos.y}px` },
         },
+        // 命令在跑：顶沿一条流动光带，点它就是停止（不再有「运行中」文字条）
+        tab && tab.running
+          ? h('div', {
+              className: 'gcmd-progress',
+              title: '停止这个命令（Esc）',
+              onMouseDown: (event) => {
+                event.stopPropagation()
+                stopRun(tab.id)
+              },
+            })
+          : null,
         h(TabsBar, { tabs: state.tabs, activeId: state.activeId }),
         h(Output, { tab, env: state.env }),
-        // 真 cmd 没有状态栏：只有命令在跑时才浮出这一条（带停止按钮）
-        tab && tab.running ? h(StatusBar, { tab }) : null,
         state.paletteOpen ? h(Palette, { state }) : null,
         state.editorOpen && state.editorDraft ? h(Editor, { draft: state.editorDraft }) : null,
         state.settingsOpen ? h(Settings, { state }) : null,
