@@ -1,0 +1,191 @@
+{
+  "format": 1,
+  "title": {
+    "en": "wrysmil's DSH plugins",
+    "zh": "wrysmil 的 DSH 插件索引"
+  },
+  "description": {
+    "en": "Self-use DeepSeek Harness plugins, plus the third-party plugins I use every day.",
+    "zh": "自用的 DeepSeek Harness 插件，以及日常在用的第三方插件。"
+  },
+  "metadata": {
+    "categories": {
+      "own": { "title": { "en": "Mine", "zh": "自用" } },
+      "context": { "title": { "en": "Context", "zh": "上下文" } },
+      "interface": { "title": { "en": "Interface", "zh": "界面" } },
+      "media": { "title": { "en": "Media", "zh": "多模态" } },
+      "utility": { "title": { "en": "Utility", "zh": "工具" } }
+    }
+  },
+  "plugins": [
+    {
+      "name": "@local/prompt-enhance",
+      "title": { "en": "Prompt Enhance", "zh": "提示词润色" },
+      "description": {
+        "en": "A sparkle button in the composer that rewrites the draft into a clearer prompt using the last two rounds as context.",
+        "zh": "输入框里的润色按钮：结合最近两轮对话，把草稿改写成更清晰的提示词。"
+      },
+      "author": "wrysmil",
+      "homepage": "https://github.com/wrysmil/dsh-plugins/tree/main/prompt-enhance",
+      "repository": { "url": "https://github.com/wrysmil/dsh-plugins.git", "directory": "prompt-enhance" },
+      "metadata": { "category": "own", "keywords": ["prompt", "rewrite", "composer"] },
+      "versions": [
+        {
+          "version": "1.0.0",
+          "publishTimestamp": 1794987693,
+          "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
+          "source": {
+            "type": "git",
+            "url": "https://github.com/wrysmil/dsh-plugins.git",
+            "commit": "69741c4acc8c27094f3c88a914c2432a09119aef",
+            "path": "prompt-enhance"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-global-cmd",
+      "title": { "en": "Global CMD", "zh": "全局 CMD" },
+      "description": {
+        "en": "A resident command panel independent of any session, with custom action buttons that run local commands.",
+        "zh": "不依赖会话的常驻命令面板，支持自定义 Action 按钮一键执行本机命令。"
+      },
+      "author": "wrysmil",
+      "homepage": "https://github.com/wrysmil/dsh-plugins/tree/main/dsh-global-cmd",
+      "repository": { "url": "https://github.com/wrysmil/dsh-plugins.git", "directory": "dsh-global-cmd" },
+      "metadata": { "category": "own", "keywords": ["commands", "shell", "panel"] },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1794987693,
+          "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
+          "source": {
+            "type": "git",
+            "url": "https://github.com/wrysmil/dsh-plugins.git",
+            "commit": "69741c4acc8c27094f3c88a914c2432a09119aef",
+            "path": "dsh-global-cmd"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-mnemon",
+      "title": { "en": "Mnemon", "zh": "Mnemon 分层记忆" },
+      "description": {
+        "en": "Composable, view-based context: pluggable sources and strategies with layered memory and self-evolving skills.",
+        "zh": "可组合的视图式上下文：可插拔来源与策略，分层记忆与自进化技能。"
+      },
+      "metadata": { "category": "context", "keywords": ["memory", "context"] },
+      "versions": [
+        {
+          "version": "0.5.47",
+          "publishTimestamp": 1794987693,
+          "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
+          "source": { "type": "npm" }
+        }
+      ]
+    },
+    {
+      "name": "billion-context",
+      "title": { "en": "billion-context", "zh": "billion-context 压缩" },
+      "description": {
+        "en": "Context compression for long single sessions with a much smaller effective context window.",
+        "zh": "上下文压缩插件：小窗口也能跑超长单会话，显著减少 token 消耗。"
+      },
+      "metadata": { "category": "context", "keywords": ["compression", "context"] },
+      "versions": [
+        {
+          "version": "0.1.216",
+          "publishTimestamp": 1794987693,
+          "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
+          "source": { "type": "npm" }
+        }
+      ]
+    },
+    {
+      "name": "dsh-better-sidebar",
+      "title": { "en": "Better Sidebar", "zh": "增强侧栏" },
+      "description": {
+        "en": "File tree, editor, changes, tasks and side chat in one column, separate for every conversation.",
+        "zh": "文件树、编辑器、变更、任务与侧边对话合在一列，且每个会话独立。"
+      },
+      "metadata": { "category": "interface", "keywords": ["sidebar", "editor"] },
+      "versions": [
+        {
+          "version": "0.32.0",
+          "publishTimestamp": 1794987693,
+          "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
+          "source": { "type": "npm" }
+        }
+      ]
+    },
+    {
+      "name": "dsh-image-gen",
+      "title": { "en": "Image Generation", "zh": "图像生成" },
+      "description": {
+        "en": "ChatGPT-like image generation: Gemini, OpenAI, Seedream, DashScope, local ComfyUI.",
+        "zh": "类 ChatGPT 的图像生成：Gemini、OpenAI、Seedream、DashScope、本地 ComfyUI。"
+      },
+      "metadata": { "category": "media", "keywords": ["image", "generation"] },
+      "versions": [
+        {
+          "version": "0.11.1",
+          "publishTimestamp": 1794987693,
+          "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
+          "source": { "type": "npm" }
+        }
+      ]
+    },
+    {
+      "name": "dsh-cost-meter",
+      "title": { "en": "Cost Meter", "zh": "费用统计" },
+      "description": {
+        "en": "Session and daily cost tracking with multi-vendor pricing and coding-plan quota queries.",
+        "zh": "会话与当日费用统计，多厂商价格目录与 Coding Plan 额度查询。"
+      },
+      "metadata": { "category": "utility", "keywords": ["cost", "billing", "usage"] },
+      "versions": [
+        {
+          "version": "1.9.67",
+          "publishTimestamp": 1794987693,
+          "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
+          "source": { "type": "npm" }
+        }
+      ]
+    },
+    {
+      "name": "@tt-a1i/archify-dsh",
+      "title": { "en": "Archify", "zh": "Archify 架构图" },
+      "description": {
+        "en": "Skill-only bundle that produces validated, explorable architecture and flow diagrams.",
+        "zh": "纯技能包：生成经过校验、可探索的架构图与流程图。"
+      },
+      "metadata": { "category": "utility", "keywords": ["diagram", "skill"] },
+      "versions": [
+        {
+          "version": "1.1.0",
+          "publishTimestamp": 1794987693,
+          "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
+          "source": { "type": "npm" }
+        }
+      ]
+    },
+    {
+      "name": "dsh-synapse",
+      "title": { "en": "Synapse", "zh": "Synapse 非线性工作区" },
+      "description": {
+        "en": "A visual, non-linear conversation workspace for DeepSeek Harness.",
+        "zh": "可视化的非线性会话工作区。"
+      },
+      "metadata": { "category": "interface", "keywords": ["workspace", "visual"] },
+      "versions": [
+        {
+          "version": "0.5.7",
+          "publishTimestamp": 1794987693,
+          "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
+          "source": { "type": "npm" }
+        }
+      ]
+    }
+  ]
+}
