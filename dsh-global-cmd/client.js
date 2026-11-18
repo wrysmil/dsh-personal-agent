@@ -24,7 +24,8 @@ window.__ModuleLoader__.load({
     const API = '/dsh-global-cmd/api'
     const STYLE_ID = 'dsh-global-cmd-style'
     const PREFS_KEY = 'dsh-global-cmd:console:v1'
-    const POLL_MS = 150
+    const POLL_MS = 80
+    const FIRST_POLL_MS = 20
     const MAX_LINES = 3000
     const DEFAULT_HEIGHT = 420
     const MIN_HEIGHT = 220
@@ -794,7 +795,7 @@ window.__ModuleLoader__.load({
           )
         }
       }
-      timers.set(jobId, window.setTimeout(tick, POLL_MS))
+      timers.set(jobId, window.setTimeout(tick, FIRST_POLL_MS))
     }
 
     function rememberCommand(tabId, command) {
@@ -914,6 +915,7 @@ window.__ModuleLoader__.load({
         shell: seed?.shell || state.settings.defaultShell || 'auto',
         cwd: seed?.cwd || defaultCwdFor(state.settings, state.env),
       })
+      focusPromptOnAppear = true
       store.set({ tabs: [...state.tabs, tab], activeId: tab.id })
       persistTabs()
       return tab
@@ -966,6 +968,7 @@ window.__ModuleLoader__.load({
       if (state.tabs.length < 2) return
       const index = state.tabs.findIndex((tab) => tab.id === state.activeId)
       const next = (index + direction + state.tabs.length) % state.tabs.length
+      focusPromptOnAppear = true
       store.set({ activeId: state.tabs[next].id })
       persistTabs()
     }
@@ -973,6 +976,7 @@ window.__ModuleLoader__.load({
     function selectTab(index) {
       const tab = store.get().tabs[index]
       if (tab) {
+        focusPromptOnAppear = true
         store.set({ activeId: tab.id })
         persistTabs()
       }
@@ -1131,23 +1135,50 @@ window.__ModuleLoader__.load({
       return `${first}\n(c) Microsoft Corporation。保留所有权利。`
     }
 
-    /** 提示符输入框的 DOM 句柄：点输出区空白 / 点历史命令行时用来聚焦与回填 */
+    /** 提示符输入框的 DOM 句柄：点终端任意位置 / 点历史命令行时用来聚焦与回填 */
     const promptRef = { current: null }
+    /** 提示符下一次出现时是否强制聚焦（打开控制台、切标签）；命令跑完后只在焦点还在控制台里时才抢回来 */
+    let focusPromptOnAppear = true
+
+    /** 输出区里由它们自己处理点击的元素，不抢焦点 */
+    const FOCUS_GUARD = 'button, a, input, textarea, select, [contenteditable="true"]'
+
+    function focusPrompt() {
+      const node = promptRef.current
+      if (node && typeof node.focus === 'function') node.focus()
+    }
 
     function Output({ tab, env }) {
       const scroller = useRef(null)
+      const pressed = useRef(null)
+      const running = Boolean(tab && tab.running)
       const count = tab ? tab.lines.length : 0
 
       useEffect(() => {
         const node = scroller.current
         if (node) node.scrollTop = node.scrollHeight
-      }, [count, tab ? tab.id : ''])
+      }, [count, tab ? tab.id : '', running])
 
       if (!tab) return null
 
       const reuse = (text) => {
         store.patchTab(tab.id, { draft: text })
-        if (promptRef.current) promptRef.current.focus()
+        focusPrompt()
+      }
+
+      // 点终端任意位置都把焦点交回提示符（光标随时都在，不用专门去点提示符那一行）。
+      // 拖选文本、双击选词时不抢，免得刚选中就被清掉。
+      const startPress = (event) => {
+        pressed.current = event.button === 0 ? { x: event.clientX, y: event.clientY } : null
+      }
+      const endPress = (event) => {
+        const start = pressed.current
+        pressed.current = null
+        if (!start || event.button !== 0 || event.detail > 1) return
+        if (Math.abs(event.clientX - start.x) > 3 || Math.abs(event.clientY - start.y) > 3) return
+        const node = event.target
+        if (node && typeof node.closest === 'function' && node.closest(FOCUS_GUARD)) return
+        focusPrompt()
       }
 
       return h(
@@ -1155,10 +1186,8 @@ window.__ModuleLoader__.load({
         {
           className: 'gcmd-scroll',
           ref: scroller,
-          // 点输出区空白处把焦点交回提示符，像真终端一样随手就能继续输入
-          onMouseDown: (event) => {
-            if (event.target === event.currentTarget && promptRef.current) promptRef.current.focus()
-          },
+          onMouseDown: startPress,
+          onMouseUp: endPress,
         },
         h('div', { className: 'gcmd-banner' }, bannerText(env)),
         tab.lines.map((line, index) =>
@@ -1168,7 +1197,9 @@ window.__ModuleLoader__.load({
             onReuse: line.kind === 'cmd' ? () => reuse(line.text) : undefined,
           }),
         ),
-        h(PromptRow, { tab }),
+        // 命令跑的时候不挂提示符：像真 cmd 一样，输出直接接在回显行后面，
+        // 不会先冒出一行空提示符、等一会儿再补输出
+        running ? null : h(PromptRow, { tab }),
       )
     }
 
@@ -1182,8 +1213,17 @@ window.__ModuleLoader__.load({
 
       useEffect(() => {
         setDraft(tab ? tab.draft : '')
-        promptRef.current = inputRef.current
-        if (tab && inputRef.current) inputRef.current.focus()
+        const node = inputRef.current
+        promptRef.current = node
+        if (tab && node) {
+          // 打开控制台 / 切标签时直接聚焦；命令跑完提示符重新出现时，只有焦点还在控制台里
+          // （或压根不在任何地方）才抢回来，免得你正在别处输入时被它抢走
+          const active = document.activeElement
+          const dock = node.closest('.gcmd-dock')
+          const inside = !active || active === document.body || (dock && dock.contains(active))
+          if (focusPromptOnAppear || inside) node.focus()
+          focusPromptOnAppear = false
+        }
         return () => {
           if (promptRef.current === inputRef.current) promptRef.current = null
         }
@@ -1329,6 +1369,7 @@ window.__ModuleLoader__.load({
               'data-active': tab.id === activeId ? 'true' : 'false',
               title: `${tabName(tab)}\n${tab.cwd || ''}`.trim(),
               onClick: () => {
+                focusPromptOnAppear = true
                 store.set({ activeId: tab.id })
                 persistTabs()
               },
@@ -1998,6 +2039,7 @@ window.__ModuleLoader__.load({
           const modifier = event.ctrlKey || event.metaKey
           if (modifier && event.shiftKey && (event.key === 'k' || event.key === 'K')) {
             event.preventDefault()
+            if (!store.get().dockOpen) focusPromptOnAppear = true
             store.set((prev) => ({ dockOpen: !prev.dockOpen }))
             return
           }
@@ -2116,7 +2158,10 @@ window.__ModuleLoader__.load({
           'data-open': state.dockOpen ? 'true' : 'false',
           title: `全局控制台（${IS_MAC ? '⌘⇧K' : 'Ctrl+Shift+K'}）`,
           'aria-label': '全局控制台',
-          onClick: () => store.set((prev) => ({ dockOpen: !prev.dockOpen })),
+          onClick: () => {
+            if (!store.get().dockOpen) focusPromptOnAppear = true
+            store.set((prev) => ({ dockOpen: !prev.dockOpen }))
+          },
         },
         h('span', { className: 'gcmd-foot-glyph' }, '❯_'),
         wide ? h('span', { className: 'gcmd-foot-label' }, '控制台') : null,
