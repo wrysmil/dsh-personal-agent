@@ -5,12 +5,12 @@
     "zh": "wrysmil 的 DSH 插件索引"
   },
   "description": {
-    "en": "Self-use DeepSeek Harness plugins, plus the third-party plugins I use every day.",
-    "zh": "自用的 DeepSeek Harness 插件，以及日常在用的第三方插件。"
+    "en": "DeepSeek Harness plugins, plus the third-party plugins worth installing together.",
+    "zh": "DeepSeek Harness 插件集合，连同值得一起装的第三方插件。"
   },
   "metadata": {
     "categories": {
-      "own": { "title": { "en": "Mine", "zh": "自用" } },
+      "custom": { "title": { "en": "Custom", "zh": "定制" } },
       "context": { "title": { "en": "Context", "zh": "上下文" } },
       "interface": { "title": { "en": "Interface", "zh": "界面" } },
       "media": { "title": { "en": "Media", "zh": "多模态" } },
@@ -28,7 +28,7 @@
       "author": "wrysmil",
       "homepage": "https://github.com/wrysmil/dsh-plugins/tree/main/prompt-enhance",
       "repository": { "url": "https://github.com/wrysmil/dsh-plugins.git", "directory": "prompt-enhance" },
-      "metadata": { "category": "own", "keywords": ["prompt", "rewrite", "composer"] },
+      "metadata": { "category": "custom", "keywords": ["prompt", "rewrite", "composer"] },
       "versions": [
         {
           "version": "1.0.0",
@@ -53,7 +53,7 @@
       "author": "wrysmil",
       "homepage": "https://github.com/wrysmil/dsh-plugins/tree/main/dsh-global-cmd",
       "repository": { "url": "https://github.com/wrysmil/dsh-plugins.git", "directory": "dsh-global-cmd" },
-      "metadata": { "category": "own", "keywords": ["commands", "shell", "panel"] },
+      "metadata": { "category": "custom", "keywords": ["commands", "shell", "panel"] },
       "versions": [
         {
           "version": "0.1.0",

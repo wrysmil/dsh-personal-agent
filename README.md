@@ -1,6 +1,6 @@
 # dsh-plugins
 
-自用的 DeepSeek Harness (DSH) 插件集合，同时作为自定义插件索引（Plugin Index）的托管仓库。
+DeepSeek Harness (DSH) 插件集合，同时作为自定义插件索引（Plugin Index）的托管仓库。
 
 ## 仓库结构
 
