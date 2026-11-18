@@ -2,3 +2,7 @@ node_modules/
 *.log
 *.bak
 .DS_Store
+
+# 本地临时产物（截图、一次性验证脚本）：不要进仓库，也不要被发布脚本同步
+.tmp-*
+*.tmp
