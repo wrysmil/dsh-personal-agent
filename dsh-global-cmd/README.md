@@ -79,7 +79,7 @@ plugin_manager action=install_bundle target=D:\workspace\dsh-plugins\dsh-global-
 - 点上面任意一条历史命令行（`C:\path>命令`）→ 把那条命令**放回提示符**，改几个字再回车；点输出区空白也能把焦点交回提示符。
 - `↑` / `↓` 翻历史命令。
 - 命令跑起来后底部出现状态条，点**停止**（或按 `Esc`）终止整棵进程树（Windows 用 `taskkill /t /f`）。
-- 失败或超时的命令会在输出里补一行淡淡的 `[退出码 7 · 0.4s]` / `[已超时终止 · 120.0s]`，成功的命令像真 cmd 一样不啰嗦。
+- 失败的命令会在输出里补一行淡淡的 `[退出码 7 · 0.4s]`；成功的命令像真 cmd 一样不啰嗦。命令**默认不限时**，一直跑到自己结束，或者你按「停止」/关掉这个标签。
 - 提示符里显示的完整工作目录，`cd` 之后立刻跟着变。
 
 ### 内置的终端命令（本地处理，不起进程）
@@ -159,7 +159,7 @@ plugin_manager action=install_bundle target=D:\workspace\dsh-plugins\dsh-global-
 写入是原子的（临时文件 + rename）。想重置命令库，删掉 `actions.json` 后重新加载插件即可。
 
 也可在插件 `cordis.patch.yml` 的 `config` 里覆盖：`dataFile`（换数据文件）、`trustedHosts`（额外信任的 Host 名）、
-`maxTimeoutMs`（单条命令超时上限）。
+`maxTimeoutMs`（单条命令超时上限；命令本身默认不限时）。
 
 ---
 
@@ -171,7 +171,7 @@ plugin_manager action=install_bundle target=D:\workspace\dsh-plugins\dsh-global-
 | --- | --- | --- |
 | GET | `/state` | 读 `{settings, actions}` |
 | PUT | `/state` | 归一化后保存 |
-| GET | `/env` | 平台、系统版本、主机名、数据文件、家目录、默认 cwd、可用 shell、最大超时 |
+| GET | `/env` | 平台、系统版本、主机名、数据文件、家目录、默认 cwd、可用 shell、超时上限 |
 | GET | `/cwd?path=&base=` | 解析 `cd` 目标，返回 `{path, exists, isDirectory}` |
 | POST | `/exec` | 启动命令 `{command, shell, cwd, timeoutMs}` → `{id}` |
 | GET | `/exec/<id>?after=N` | 增量读取输出（poll），`done` 时带退出码 |
@@ -183,7 +183,7 @@ plugin_manager action=install_bundle target=D:\workspace\dsh-plugins\dsh-global-
 
 - 路由只绑定 `127.0.0.1`，并且**每个请求都校验 Host 头**，挡掉 DNS rebinding。
 - 命令以启动 DSH 的那个用户身份在本机执行 —— 不要在插件的命令库里放敏感凭据。
-- 单条命令默认 120s 超时、最大 30min；输出超 400KB 自动截断并提示。
+- 单条命令**默认不限时**：只有你在偏好里设了秒数才会按时终止（上限 30min，填 0 就是不限制）；输出超 400KB 自动截断并提示。
 - 插件不引入任何第三方依赖（Host 用 `node:child_process` / `node:fs`，Client 只用 React）。
 
 ---

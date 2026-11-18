@@ -27,8 +27,10 @@ const ROUTE_PREFIX = '/dsh-global-cmd/api'
 const MAX_BODY_BYTES = 2 * 1024 * 1024
 const MAX_CHUNKS = 6000
 const MAX_STREAM_CHARS = 400 * 1024
-const DEFAULT_TIMEOUT_MS = 120000
+const DEFAULT_TIMEOUT_MS = 0
 const MAX_TIMEOUT_MS = 30 * 60 * 1000
+/** 数据文件版本；升到 2 时把旧默认的 120 秒超时重置为「不限制」。 */
+const SETTINGS_VERSION = 2
 const SHELLS = new Set(['auto', 'cmd', 'powershell', 'pwsh', 'bash', 'sh'])
 
 function jsonBody(res, status, value) {
@@ -180,12 +182,18 @@ function normalizeState(raw) {
     .map((item, index) => normalizeAction(item, index, home))
     .filter(Boolean)
   const timeout = Number(settingsSrc.timeoutMs)
+  // 旧版本的默认超时是 120 秒，会把长构建、常驻服务当成卡死；升级到 v2 时把它当成「没设置过」。
+  const legacyDefault = Number(src.version) !== SETTINGS_VERSION && timeout === 120000
   return {
-    version: 1,
+    version: SETTINGS_VERSION,
     settings: {
       defaultShell: SHELLS.has(settingsSrc.defaultShell) ? settingsSrc.defaultShell : 'auto',
       defaultCwd: typeof settingsSrc.defaultCwd === 'string' ? settingsSrc.defaultCwd.trim().slice(0, 400) : '',
-      timeoutMs: Number.isFinite(timeout) && timeout > 0 ? Math.min(timeout, MAX_TIMEOUT_MS) : DEFAULT_TIMEOUT_MS,
+      timeoutMs: legacyDefault
+        ? DEFAULT_TIMEOUT_MS
+        : Number.isFinite(timeout) && timeout > 0
+          ? Math.min(timeout, MAX_TIMEOUT_MS)
+          : DEFAULT_TIMEOUT_MS,
       closeAfterRun: settingsSrc.closeAfterRun === true,
     },
     actions,
@@ -281,12 +289,22 @@ export function apply(ctx, config = {}) {
   const jobs = new Map()
 
   function readState() {
+    let stored
     try {
-      const text = readFileSync(dataFile, 'utf8')
-      return normalizeState(JSON.parse(text))
+      stored = JSON.parse(readFileSync(dataFile, 'utf8'))
     } catch {
       return normalizeState({})
     }
+    const state = normalizeState(stored)
+    // 版本号落后就顺手落盘一次，让「120 秒默认超时」这类旧值只迁移一次。
+    if (stored !== null && typeof stored === 'object' && Number(stored.version) !== SETTINGS_VERSION) {
+      try {
+        writeState(state)
+      } catch {
+        // 只读目录里迁移失败也无所谓：内存中的语义已经是新的。
+      }
+    }
+    return state
   }
 
   function writeState(state) {
@@ -353,13 +371,17 @@ export function apply(ctx, config = {}) {
     }
     jobs.set(job.id, job)
 
-    const timer = setTimeout(() => {
-      if (job.done) return
-      job.timedOut = true
-      pushChunk(job, 'meta', `\n[超时 ${Math.round(timeoutMs / 1000)}s，已终止]\n`)
-      killTree(child.pid)
-    }, timeoutMs)
-    timer.unref?.()
+    // timeoutMs === 0 表示不限制：命令一直跑到自己结束，或者用户按「停止」/关标签。
+    let timer = null
+    if (timeoutMs > 0) {
+      timer = setTimeout(() => {
+        if (job.done) return
+        job.timedOut = true
+        pushChunk(job, 'meta', `\n[超时 ${Math.round(timeoutMs / 1000)}s，已终止]\n`)
+        killTree(child.pid)
+      }, timeoutMs)
+      timer.unref?.()
+    }
 
     let settled = false
     const finish = (code) => {

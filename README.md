@@ -1,6 +1,6 @@
-# dsh-plugins
+# dsh-personal-agent
 
-DeepSeek Harness (DSH) 插件集合，同时作为自定义插件索引（Plugin Index）的托管仓库。
+把 DeepSeek Harness (DSH) 装成你自己的个人智能体：自研插件 + 精选第三方插件，同时作为自定义插件索引（Plugin Index）的托管仓库。
 
 ## 仓库结构
 
@@ -13,7 +13,7 @@ DeepSeek Harness (DSH) 插件集合，同时作为自定义插件索引（Plugin
 ## 索引地址
 
 ```
-https://cdn.jsdelivr.net/gh/wrysmil/dsh-plugins@main/index.json
+https://cdn.jsdelivr.net/gh/wrysmil/dsh-personal-agent@main/index.json
 ```
 
 在 DSH 的 `plugin-market` 配置里加入该 URL，然后在 Plugins → Discover 中浏览安装。

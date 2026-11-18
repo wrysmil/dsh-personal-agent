@@ -1,12 +1,12 @@
 {
   "format": 1,
   "title": {
-    "en": "wrysmil's DSH plugins",
-    "zh": "wrysmil 的 DSH 插件索引"
+    "en": "wrysmil's Personal DSH Agent",
+    "zh": "wrysmil 的个人 DSH 智能体"
   },
   "description": {
-    "en": "DeepSeek Harness plugins, plus the third-party plugins worth installing together.",
-    "zh": "DeepSeek Harness 插件集合，连同值得一起装的第三方插件。"
+    "en": "Turn DeepSeek Harness into your own personal agent: plugins built here plus selected third-party ones.",
+    "zh": "把 DeepSeek Harness 装成你的个人智能体：自研插件与精选第三方插件。"
   },
   "metadata": {
     "categories": {
@@ -26,8 +26,8 @@
         "zh": "输入框里的润色按钮：结合最近两轮对话，把草稿改写成更清晰的提示词。"
       },
       "author": "wrysmil",
-      "homepage": "https://github.com/wrysmil/dsh-plugins/tree/main/prompt-enhance",
-      "repository": { "url": "https://github.com/wrysmil/dsh-plugins.git", "directory": "prompt-enhance" },
+      "homepage": "https://github.com/wrysmil/dsh-personal-agent/tree/main/prompt-enhance",
+      "repository": { "url": "https://github.com/wrysmil/dsh-personal-agent.git", "directory": "prompt-enhance" },
       "metadata": { "category": "custom", "keywords": ["prompt", "rewrite", "composer"] },
       "versions": [
         {
@@ -36,7 +36,7 @@
           "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
           "source": {
             "type": "git",
-            "url": "https://github.com/wrysmil/dsh-plugins.git",
+            "url": "https://github.com/wrysmil/dsh-personal-agent.git",
             "commit": "69741c4acc8c27094f3c88a914c2432a09119aef",
             "path": "prompt-enhance"
           }
@@ -51,8 +51,8 @@
         "zh": "不依赖会话的常驻命令面板，支持自定义 Action 按钮一键执行本机命令。"
       },
       "author": "wrysmil",
-      "homepage": "https://github.com/wrysmil/dsh-plugins/tree/main/dsh-global-cmd",
-      "repository": { "url": "https://github.com/wrysmil/dsh-plugins.git", "directory": "dsh-global-cmd" },
+      "homepage": "https://github.com/wrysmil/dsh-personal-agent/tree/main/dsh-global-cmd",
+      "repository": { "url": "https://github.com/wrysmil/dsh-personal-agent.git", "directory": "dsh-global-cmd" },
       "metadata": { "category": "custom", "keywords": ["commands", "shell", "panel"] },
       "versions": [
         {
@@ -61,7 +61,7 @@
           "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
           "source": {
             "type": "git",
-            "url": "https://github.com/wrysmil/dsh-plugins.git",
+            "url": "https://github.com/wrysmil/dsh-personal-agent.git",
             "commit": "69741c4acc8c27094f3c88a914c2432a09119aef",
             "path": "dsh-global-cmd"
           }

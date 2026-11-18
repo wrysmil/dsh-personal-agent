@@ -535,6 +535,26 @@ window.__ModuleLoader__.load({
 .gcmd-btn[data-tone="primary"]:hover { background: #2f5cd4; border-color: #2f5cd4; }
 .gcmd-btn[data-tone="danger"] { color: var(--dsw-alias-state-error-primary, #ff6b6b); border-color: rgba(255, 107, 107, .4); }
 .gcmd-btn:disabled { opacity: .5; cursor: default; }
+.gcmd-modal {
+  position: absolute; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center;
+  padding: 16px; background: rgba(6, 6, 8, .52); border-radius: 10px;
+}
+.gcmd-modal-card {
+  width: min(330px, 88%); padding: 14px 16px 12px; border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-1, #1b1b20); border: 1px solid var(--dsw-alias-border-l2, #45454f);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .45); animation: gcmd-pop .12s ease-out;
+}
+.gcmd-modal-title { font-size: 13px; font-weight: 600; color: var(--dsw-alias-label-primary, #e9e9ec); }
+.gcmd-modal-text { margin-top: 6px; font-size: 12px; line-height: 1.5; color: var(--dsw-alias-label-secondary, #9a9aa4); }
+.gcmd-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.gcmd-modal-btn {
+  height: 26px; padding: 0 12px; border-radius: 6px; font-size: 12px;
+  border: 1px solid var(--dsw-alias-border-l1, #34343a); background: transparent;
+  color: var(--dsw-alias-label-primary, #e9e9ec);
+}
+.gcmd-modal-btn:hover { border-color: var(--dsw-alias-border-l2, #55555e); }
+.gcmd-modal-btn[data-tone="danger"] { background: #c4453f; border-color: #c4453f; color: #fff; }
+.gcmd-modal-btn[data-tone="danger"]:hover { background: #a83630; border-color: #a83630; }
 .gcmd-notice {
   position: absolute; left: 50%; bottom: 74px; transform: translateX(-50%);
   padding: 5px 12px; border-radius: 999px; font-size: 12px;
@@ -581,7 +601,7 @@ window.__ModuleLoader__.load({
         error: '',
         env: null,
         actions: [],
-        settings: { defaultShell: 'auto', defaultCwd: '', timeoutMs: 120000 },
+        settings: { defaultShell: 'auto', defaultCwd: '', timeoutMs: 0 },
         tabs: [],
         activeId: '',
         dockOpen: prefs.open === true,
@@ -591,6 +611,7 @@ window.__ModuleLoader__.load({
         paletteOpen: false,
         editorOpen: false,
         settingsOpen: false,
+        closing: null,
         notice: '',
       }
       const listeners = new Set()
@@ -734,7 +755,8 @@ window.__ModuleLoader__.load({
         return
       }
       if (lower === 'exit') {
-        closeTab(tabId)
+        // 和点 ✕ 一样，先确认再关，避免手快丢掉正在看的输出
+        requestClose(tabId)
         return
       }
 
@@ -819,6 +841,24 @@ window.__ModuleLoader__.load({
       store.set({ tabs: [...state.tabs, tab], activeId: tab.id })
       persistTabs()
       return tab
+    }
+
+    /** 关标签前先确认：标签上的 ✕ 与「关闭终端」快捷键都走这里，真的关掉才调 closeTab。 */
+    function requestClose(tabId) {
+      const state = store.get()
+      if (!state.tabs.some((tab) => tab.id === tabId)) return
+      store.set({ closing: tabId })
+    }
+
+    function confirmClose() {
+      const state = store.get()
+      const tabId = state.closing
+      store.set({ closing: null })
+      if (tabId) closeTab(tabId)
+    }
+
+    function cancelClose() {
+      store.set({ closing: null })
     }
 
     function closeTab(tabId) {
@@ -1241,7 +1281,7 @@ window.__ModuleLoader__.load({
                 title: `关闭终端（${COMBO('W')}）`,
                 onClick: (event) => {
                   event.stopPropagation()
-                  closeTab(tab.id)
+                  requestClose(tab.id)
                 },
               },
               '✕',
@@ -1748,14 +1788,20 @@ window.__ModuleLoader__.load({
             h(
               'div',
               { className: 'gcmd-field' },
-              h('span', { className: 'gcmd-field-label' }, '单条命令超时（秒）'),
+              h('span', { className: 'gcmd-field-label' }, '单条命令超时（秒，0 = 一直运行）'),
               h('input', {
                 type: 'number',
-                min: 1,
+                min: 0,
                 max: Math.round(((state.env && state.env.maxTimeoutMs) || 1800000) / 1000),
-                value: Math.round((form.timeoutMs || 120000) / 1000),
-                onChange: (event) =>
-                  setForm({ ...form, timeoutMs: Math.max(1, Number(event.target.value) || 120) * 1000 }),
+                value: Math.round((form.timeoutMs || 0) / 1000),
+                onChange: (event) => {
+                  const seconds = Number(event.target.value)
+                  const max = Math.round(((state.env && state.env.maxTimeoutMs) || 1800000) / 1000)
+                  setForm({
+                    ...form,
+                    timeoutMs: Number.isFinite(seconds) && seconds > 0 ? Math.min(seconds, max) * 1000 : 0,
+                  })
+                },
               }),
             ),
             h(
@@ -1801,7 +1847,41 @@ window.__ModuleLoader__.load({
         state.paletteOpen ? h(Palette, { state }) : null,
         state.editorOpen && state.editorDraft ? h(Editor, { draft: state.editorDraft }) : null,
         state.settingsOpen ? h(Settings, { state }) : null,
+        state.closing ? h(CloseConfirm, { state }) : null,
         state.notice ? h('div', { className: 'gcmd-notice' }, state.notice) : null,
+      )
+    }
+
+    /* --------------------------- 组件：关闭确认 --------------------------- */
+
+    function CloseConfirm({ state }) {
+      const tab = state.tabs.find((item) => item.id === state.closing) || null
+      const running = Boolean(tab && tab.running)
+      return h(
+        'div',
+        { className: 'gcmd-modal', onMouseDown: (event) => event.stopPropagation() },
+        h(
+          'div',
+          { className: 'gcmd-modal-card', role: 'dialog', 'aria-modal': 'true' },
+          h('div', { className: 'gcmd-modal-title' }, '关闭这个终端？'),
+          h(
+            'div',
+            { className: 'gcmd-modal-text' },
+            running
+              ? '这个终端里还有命令在运行，关闭会一并终止它，输出也会一起消失。'
+              : '关闭后这个标签和它的输出都会消失，不会影响其他终端。',
+          ),
+          h(
+            'div',
+            { className: 'gcmd-modal-actions' },
+            h('button', { className: 'gcmd-modal-btn', onClick: cancelClose }, '取消'),
+            h(
+              'button',
+              { className: 'gcmd-modal-btn', 'data-tone': 'danger', onClick: confirmClose },
+              running ? '终止并关闭' : '关闭',
+            ),
+          ),
+        ),
       )
     }
 
@@ -1850,6 +1930,17 @@ window.__ModuleLoader__.load({
           }
           const state = store.get()
           if (!state.dockOpen) return
+          // 确认框开着时只认 Enter / Esc，别让别的快捷键抢走按键
+          if (state.closing) {
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              confirmClose()
+            } else if (event.key === 'Escape') {
+              event.preventDefault()
+              cancelClose()
+            }
+            return
+          }
           if (modifier && !event.shiftKey && (event.key === 'k' || event.key === 'K')) {
             event.preventDefault()
             store.set((prev) => ({ paletteOpen: !prev.paletteOpen, settingsOpen: false, editorOpen: false }))
@@ -1867,7 +1958,7 @@ window.__ModuleLoader__.load({
           }
           if (modifier && (event.key === 'w' || event.key === 'W')) {
             event.preventDefault()
-            closeTab(state.activeId)
+            requestClose(state.activeId)
             return
           }
           if (modifier && (event.key === 'l' || event.key === 'L')) {

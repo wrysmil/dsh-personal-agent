@@ -103,7 +103,7 @@ test('state 初始为空 + 读写持久化', async (t) => {
   const initial = await json(`${url}/state`)
   assert.equal(initial.status, 200)
   assert.equal(initial.body.actions.length, 0, '不再内置示例命令')
-  assert.equal(initial.body.settings.timeoutMs, 120000)
+  assert.equal(initial.body.settings.timeoutMs, 0, '默认不限制单条命令的运行时长')
 
   const saved = await json(`${url}/state`, {
     method: 'PUT',
