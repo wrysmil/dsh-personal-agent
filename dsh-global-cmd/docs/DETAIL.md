@@ -3,12 +3,26 @@
 ## 为什么它不需要会话
 
 DSH 的会话级注入点（`conversation.composer.dock`、`conversation.input.right` 等）都挂在某条会话的渲染树上，
-会话销毁就消失。本插件只用两个 **root 作用域** 的挂载点：
+会话销毁就消失。本插件的主界面只用两个 **root 作用域** 的挂载点：
 
 | 挂载点 | 作用域 | 放什么 |
 | --- | --- | --- |
 | `sidebar.footer.action` | root | 侧栏底部那个「❯_ 控制台」入口按钮，与「设置」并排 |
 | `shell.overlay` | root | 控制台浮窗与命令库/表单浮层 |
+
+另有一个 session 作用域的挂载点，只用来在**聊天代码块右下角**补一个「收藏到 CMD」按钮：
+
+| 挂载点 | 作用域 | 放什么 |
+| --- | --- | --- |
+| `conversation.chat.markdown.fence` | session | 代码块工具条（按语言注册 layer，`key` = 小写围栏语言） |
+
+围栏层是 `hoc` 槽位：`entryKey` 就是围栏语言，层拿到 `{ lang, code, streaming, meta, children }`。
+**渲染 `children` 才是「装饰」**（保留 Chat 原来的代码块，只额外加一条工具条）；不渲染 `children` 就成了「替换」。
+所以这里只做装饰，另外顺手兜一层：万一 `children` 是空的，就自己用 `<pre><code>` 还原代码，绝不把代码弄丢。
+流式输出阶段（`streaming`）代码还没写完，直接原样返回 `children`，等落定再出现按钮。
+
+槽位没有通配符 key，只能按语言逐个注册（`bash`/`sh`/`shell`/…/`powershell`/`ps1`/`pwsh`/`cmd`/`bat`/`batch`），
+每个语言的 `id` 都是 `dsh-global-cmd:fence/<lang>`，卸载时逐个 dispose。
 
 `shell.overlay` 的定义是：
 
@@ -176,7 +190,10 @@ PowerShell 在非交互下把错误写进 stderr 时会带 `#< CLIXML` 序列化
 - `error` 事件（可执行文件不存在，如 ENOENT，退出码会是 -4058）和 `close` 都可能触发，用 `settled` 标志防重复回调。
 - 命令默认没有超时；只有请求里带了正数 `timeoutMs` 才装计时器。超时用 `setTimeout(...).unref()`，到点调 `killTree(pid)`：Windows 上 `spawn('taskkill', ['/pid', pid, '/t', '/f'])`，
   这样 `cmd → node → …` 整棵树都会死，不会留下孤儿进程。
-- 每路输出上限 400KB、任务表只保留最近 20 个（`JOBS_KEEP`），超了写一条 `[输出超过 400KB，已截断]` 的 meta 行。
+- 输出**不按字节数截断**。内存里的 chunks 只是「界面还没读走的增量窗口」：`MAX_CHUNKS = 200000` 行，
+  `trimChunks()` 只回收「`job.served` 已经读走」的前缀（`dropped` 同步累加，客户端的绝对游标因此不会错位）；
+  没有客户端在读时一行都不丢。完整日志始终在磁盘上，`GET /exec/<id>/log?stream=out|err` 直接回原文件。
+- 任务表只保留最近 20 个（`JOBS_KEEP`），但正在跑的任务不会被淘汰。
 
 ### 为什么输出不接管道，而是让子进程直接写文件
 
@@ -245,6 +262,61 @@ cd /d D:\workspace\project\aigc_platfrom_back && mvn -pl ruoyi-admin -am clean i
 shell 用 `shell bash` / `shell powershell` 这类内置命令切换。早期把 shell 下拉框和「运行」按钮塞在输入框右边，
 两个控件叠在输出文字上、还抢走输入框宽度（用户画红框点名要去掉），于是整体收进内置命令与顶沿光带。
 
+### 多行命令为什么要落成 .cmd 文件
+
+`cmd.exe` 解析 `/c` 参数时**遇到换行就截断**，后面的行被静默丢掉：
+
+```
+cmd /d /s /c "echo a<CRLF>echo b"   →   只打印 a
+```
+
+所以「命令支持换行」只改前端输入框是不够的 —— 真发下去也跑不出来。现在的做法是：
+
+- 前端提示符是 `<textarea rows=1>`，`Enter` 执行、`Shift+Enter`（或 `Alt+Enter`）换行，
+  内容含换行时右侧显示 `Shift+Enter 换行` 提示，输入框跟着内容长高（上限 168px，再高就在框内滚）。
+  多行时 `↑` / `↓` 先当光标移动，只有光标贴在首/尾才翻历史。
+- 后端 `buildSpawnSpec` 发现命令里有换行，就把命令（`CRLF` 归一成 `\n`，前置 `@echo off`）写成
+  `<jobs>/<id>.cmd`，再用 `chcp 65001>nul & ( call "<脚本>" ) 1> out 2> err` 执行。
+  `call` 而不是直接跑脚本：块里直接起 `.cmd` 会把控制权交出去，`call` 才能把退出码带回来。
+  单行命令仍走原来的 `( 命令 )` 包装，没有多一次文件 IO。
+- 本地拦截（`cls` / `exit` / `shell X` / `cd X`）只对**单行**命令生效。多行脚本里只要有一行以 `cd`
+  开头，整段就会被当成换目录而吞掉，所以含换行时一律直接交给 shell。
+
+### 大输出为什么不卡了
+
+日志是 shell 自己重定向进文件的（句柄归子进程，插件重载不打断命令），代价是读它得精打细算：
+
+- 旧版 `drainJob` 每轮 `readFileSync` **整个日志**。8MB 的输出在命令跑着的十几秒里，
+  每 80ms 就被完整读一遍并分配一次，Host 的事件循环全耗在这上面。现在按 `job.offsets` 只读
+  新增的那一段（单轮上限 1MB），半行留在 `job.pending`，多字节字符由 `StringDecoder` 续上，
+  不会在汉字中间切出乱码；日志被截断（`size < offset`）时游标自动归零。
+- 一次最多回 `MAX_CHUNKS_PER_POLL = 4000` 个 chunk，没送完时返回 `more: true`，客户端拿到就
+  立刻要下一批（`setTimeout(tick, 0)`），输出是渐进刷出来的，不会等满一个轮询周期。
+  还有没送完的批次时 `done` 保持 `false`，否则客户端一看到 `done` 就停轮询、剩下的输出没人要。
+- 界面只把最后 `TAIL_LINES = 600` 行挂进 DOM，更早的用一个虚线按钮按 `MORE_LINES = 2000` 往上翻
+  （翻的时候按 `scrollHeight` 差值把视口一起下移，正在看的那几行不会跳）。以前两万行全在 DOM 里，
+  每来一批输出都要重新排版。
+- 滚动条不再无条件贴底：只有本来就在底部（距底 < 24px）时才跟随新输出，往上翻看历史时视线不会被顶走。
+
+### 清屏连输入框一起清
+
+`cls` / `clear`、工具栏 `⌫`、`Ctrl+L` 都走同一个语义：`patchTab({ lines: [], exit: null, draft: '' })`。
+早期只清 `lines`，输入框里没执行的那半截命令还杵在那儿，看着像没清干净。
+
+### 长命令自动折行
+
+提示符是 `<textarea>`，`wrap="soft"` + `white-space: pre-wrap` + `overflow-wrap: anywhere`：
+
+- 命令超过框宽就折到下一行，不再横向裁掉半截 —— 一条几百字符的 `git commit -m "..."` 也能整段看全。
+- `soft` 只是**显示**折行，`value` 里不会多出换行符，执行时仍是同一条命令；`overflow-wrap: anywhere`
+  让没有空格的长路径/URL 也能断开。
+- 折行后的续行要回到**左边距**、吃满整行，和真终端一样 —— 早先提示符是 flex 行（`路径> | 输入框`），
+  折出来的每一行都被挤在「路径>」右边那条窄缝里。现在「路径>」绝对定位在第一行（`.gcmd-prompt-prefix`），
+  输入框 `width: 100%`，用 `text-indent`（= 量出来的前缀宽度）把**第一行**让开：
+  textarea 的 `text-indent` 只作用于第一行，续行自然从 x=0 开始。
+- 前缀宽度每次渲染都用 `getBoundingClientRect()` 量（很便宜），字体加载完或换目录后能跟上；
+  目录过长时按 `max-width: 70%` + 省略号收尾，「>」不会被顶出可视区。
+
 ## 数据归一化
 
 `normalizeState` 把不可信输入（手改的 JSON、旧版本数据）洗干净：
@@ -260,8 +332,10 @@ shell 用 `shell bash` / `shell powershell` 这类内置命令切换。早期把
 
 - 状态是一个极小的 external store（`subscribe / getSnapshot / set`）配 `useSyncExternalStore`，
   不引入任何状态库。
-- 输出区只渲染 `{kind, text}` 行的数组，`MAX_LINES = 3000` 时从头部裁剪；每行 `white-space: pre-wrap`，
-  自动滚到底部。提示符作为最后一行也在这个滚动容器里，所以输出变长时它会自然往下推。
+- 输出区只渲染 `{kind, text}` 行的数组，`MAX_LINES = 20000` 时从头部裁剪（只影响屏幕回滚，完整日志走 ⤓ 下载）；
+  其中真正挂进 DOM 的只是最后 `TAIL_LINES` 行，更早的点按钮往回翻（见「大输出为什么不卡了」）。
+  每行 `white-space: pre-wrap`，贴底时自动跟随，往上翻过就停住。提示符作为最后一行也在这个滚动容器里，
+  所以输出变长时它会自然往下推。
 - 历史命令行可点（`.gcmd-line-reuse`）：点击只做 `patchTab({draft})` + 聚焦输入框，不重跑命令；
   提示符的本地 `draft` 由 `tab.draft` 的变化同步回来。
 - 供应链条很小：`localStorage` 存布局，`fetch` 说话，CSS 一次性注入 `<style id="dsh-global-cmd-style">`
@@ -270,6 +344,32 @@ shell 用 `shell bash` / `shell powershell` 这类内置命令切换。早期把
 - 快捷键提示按平台生成（Windows 显示 `Ctrl+K`，macOS 显示 `⌘K`）。
 - 主色 token 只用来当**文字色/边框色**，不当填充底色：`--dsw-alias-brand-primary` 在某些主题下解析为浅色，
   拿它铺底色再配白字会变成「白底白字」（保存按钮踩过一次），所以主按钮用固定的 `#3b6ef0` + 白字。
+
+### 同一份命令的两个平台版本
+
+一条 action 有两个命令字段：`command`（Windows）和 `commandLinux`（Linux），两份都为空才算非法条目。
+客户端用一个很薄的解析层决定「实际执行什么」：
+
+- `commandPlatform(state)`：`settings.commandPlatform` 是 `windows` / `linux` 就用它，是 `auto`（或缺省）
+  时看 `/env` 返回的 `platform`。
+- `pickCommand(action, platform)`：优先取对应平台的字段，缺了退回另一个平台的版本 —— 只填一份也能用。
+- `pickShell(action, platform)`：切到 Linux 时把 `powershell` / `pwsh` / `cmd` 统一换成 `bash`
+  （`LINUX_SHELL_MAP`），否则 `cmd /c` 在 Linux 上根本起不来。
+- `effectiveAction(action, state)` 把上面三件事合起来，填输入框、直接执行、条目预览都走它，
+  避免「列表里显示 Linux 命令、执行却是 Windows 命令」这种不一致。
+
+平台偏好存在 `settings.commandPlatform`（`auto` / `windows` / `linux`），命令库顶部的平台标签直接读它。
+分类筛选不存状态：分组标签从库里现有的 `group` 去重生成，选中项只影响 `filtered`，页码仍由选中项推导。
+
+### PowerShell 的 CLIXML 噪音
+
+PowerShell 在 stdout/stderr 被重定向（不是 TTY）时会开启 `#< CLIXML` 序列化，进度流也一起被写成
+`<Obj S="progress">` 记录。修法有两层：
+
+1. 源头：`buildSpawnSpec` 给 PowerShell 脚本加 `$ProgressPreference='SilentlyContinue';`，不再产生进度记录。
+2. 兜底：`cleanPowerShellError(text)` 先剥掉 progress 记录与空 `<Objs>`，只把 `<S S="Error">` 还原成文本；
+   剥完什么都不剩就返回空串（调用方按行拆分时自动跳过），绝不把整段 XML 原样吐给用户。
+   这条路径按 chunk 处理，所以正则必须容忍不完整的块——现在最坏情况是漏掉一段噪音，不会再整段糊出来。
 
 ## 扩展点
 

@@ -1,6 +1,6 @@
 {
   "name": "dsh-global-cmd",
-  "version": "0.2.2",
+  "version": "0.3.2",
   "description": "全局 CMD：不依赖会话的常驻命令面板，支持自定义 Action 按钮一键执行本机命令。",
   "type": "module",
   "main": "index.js",
@@ -36,6 +36,8 @@
   },
   "scripts": {
     "build": "node --check index.js && node --check client.js",
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/"
   }
 }
+
+
