@@ -56,13 +56,13 @@
       "metadata": { "category": "custom", "keywords": ["commands", "shell", "terminal", "panel"] },
       "versions": [
         {
-          "version": "0.2.2",
-          "publishTimestamp": 1794992145,
+          "version": "0.3.2",
+          "publishTimestamp": 1795073464,
           "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
           "source": {
             "type": "git",
             "url": "https://github.com/wrysmil/dsh-personal-agent.git",
-            "commit": "26f14373f957ca4e8a0256be4ac319f1f0dadf4e",
+            "commit": "b1391a1cdea269dd725cb5655978a959c586a918",
             "path": "dsh-global-cmd"
           }
         }
