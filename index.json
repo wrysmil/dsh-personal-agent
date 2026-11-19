@@ -186,6 +186,66 @@
           "source": { "type": "npm" }
         }
       ]
+    },
+    {
+      "name": "dsh-plugin-codegraph",
+      "title": { "en": "Code Graph", "zh": "代码图谱" },
+      "description": {
+        "en": "Structural code intelligence for the agent: a self-built tree-sitter index that answers where a symbol is declared, what calls it, what a change reaches, and how one symbol reaches another.",
+        "zh": "给 Agent 的结构化代码智能：自行构建 tree-sitter 索引，回答符号在哪声明、谁在调用、改动会波及什么、两个符号之间怎么走通。"
+      },
+      "author": "CC ZHAO",
+      "homepage": "https://github.com/CC19990113/dsh-plugin-codegraph#readme",
+      "repository": { "url": "https://github.com/CC19990113/dsh-plugin-codegraph.git", "directory": "packages/bundle" },
+      "metadata": { "category": "utility", "keywords": ["codegraph", "code-intelligence", "call-graph", "tree-sitter", "static-analysis"] },
+      "versions": [
+        {
+          "version": "0.6.5",
+          "publishTimestamp": 1794206182,
+          "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
+          "source": { "type": "npm" }
+        }
+      ]
+    },
+    {
+      "name": "dsh-codegraph-visualizer",
+      "title": { "en": "Code Graph Visualizer", "zh": "代码图谱可视化" },
+      "description": {
+        "en": "Sidebar graph view for the codegraph index: walk callers, callees, impact and cycles visually, plus a tool panel and graph queries.",
+        "zh": "代码图谱索引的侧栏视图：可视化查看调用者、被调用者、影响范围与循环依赖，并提供工具面板与图查询。"
+      },
+      "author": "DSH Team",
+      "homepage": "https://github.com/xuanyuanchumo/dsh-codegraph-visualizer#readme",
+      "repository": { "url": "https://github.com/xuanyuanchumo/dsh-codegraph-visualizer.git" },
+      "metadata": { "category": "interface", "keywords": ["codegraph", "graph", "visualization", "sidebar"] },
+      "versions": [
+        {
+          "version": "0.3.1",
+          "publishTimestamp": 1794530849,
+          "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
+          "source": { "type": "npm" }
+        }
+      ]
+    },
+    {
+      "name": "dsh-codex-provider",
+      "title": { "en": "Codex Provider", "zh": "Codex 订阅通道" },
+      "description": {
+        "en": "Sign in to an OpenAI Codex (ChatGPT Plus/Pro) account with device-code OAuth, or import an existing Codex CLI login, then use the built-in openai-codex models on your subscription.",
+        "zh": "用设备码 OAuth 登录或直接导入 Codex CLI 登录态，把内置的 openai-codex 模型接进模型选择器，走 ChatGPT 订阅额度而不是 API 计费。"
+      },
+      "author": "Hu9956",
+      "homepage": "https://github.com/Hu9956/dsh-codex-provider#readme",
+      "repository": { "url": "https://github.com/Hu9956/dsh-codex-provider.git" },
+      "metadata": { "category": "utility", "keywords": ["provider", "codex", "openai", "oauth", "subscription", "device-code"] },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1786650945,
+          "engines": { "dsh": ">=0.2.0-0 <0.3.0" },
+          "source": { "type": "npm" }
+        }
+      ]
     }
   ]
 }
